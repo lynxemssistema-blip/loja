@@ -17,7 +17,7 @@ if (fs.existsSync(standaloneServer)) {
 
   const dev = process.env.NODE_ENV !== "production";
   const hostname = process.env.HOSTNAME || "0.0.0.0";
-  const port = parseInt(process.env.PORT, 10) || 3000;
+  const port = parseInt(process.env.PORT, 10) || 3005;
   const app = next({ dev, hostname, port });
   const handle = app.getRequestHandler();
 

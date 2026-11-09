@@ -18,13 +18,13 @@ if [ -f "next-build.tar.gz" ]; then
   rm -f next-build.tar.gz
 fi
 
-echo "🔄 Reiniciando processo Node.js na porta 3000..."
-fuser -k 3000/tcp 2>/dev/null || true
-pkill -f "node server.js" 2>/dev/null || true
+echo "🔄 Reiniciando processo Node.js na porta 3005..."
+fuser -k 3005/tcp 2>/dev/null || true
+pkill -f "PORT=3005" 2>/dev/null || true
 sleep 1
 
 echo "🟢 Subindo servidor Lynx..."
-export PORT=3000
+export PORT=3005
 export NODE_ENV=production
 export NEXT_PUBLIC_APP_URL="https://loja.lynxems.com.br"
 
@@ -32,8 +32,8 @@ nohup node server.js > app.log 2>&1 &
 
 sleep 3
 
-if pgrep -f "node server.js" > /dev/null; then
-  echo "✅ Sucesso! Loja Lynx rodando na porta 3000."
+if pgrep -f "server.js" > /dev/null; then
+  echo "✅ Sucesso! Loja Lynx rodando na porta 3005."
   echo "🌐 Acesse: https://loja.lynxems.com.br"
 else
   echo "⚠️ Erro ao iniciar. Verifique app.log:"
