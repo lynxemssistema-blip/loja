@@ -165,8 +165,8 @@ export default function LojaPublicaPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* 1. TOP BANNER DE CONFIANÇA & SEGURANÇA */}
-      <div className="bg-slate-900 text-slate-200 border-b border-slate-800 text-xs py-2 px-4">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div className="bg-slate-900 text-slate-200 border-b border-slate-800 text-xs py-2 px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="w-full max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-4 text-[11px] font-medium">
             <span className="flex items-center gap-1 text-emerald-400">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export default function LojaPublicaPage() {
 
       {/* 2. HEADER DA LOJA (LIMPO, CLARO E INSTITUCIONAL) */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 py-3.5 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3.5 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -229,7 +229,7 @@ export default function LojaPublicaPage() {
           </div>
 
           {/* Campo de Busca Leve */}
-          <div className="relative w-full sm:w-80">
+          <div className="relative w-full sm:w-96">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
             <input
               type="text"
@@ -244,7 +244,7 @@ export default function LojaPublicaPage() {
 
       {/* 3. HERO / APRESENTAÇÃO AMIGÁVEL & CONFIÁVEL */}
       <section className="bg-gradient-to-b from-blue-50/60 to-transparent py-8 sm:py-10 border-b border-slate-200/50">
-        <div className="max-w-6xl mx-auto px-4 text-center space-y-3">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold shadow-xs">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             Soluções Selecionadas com Entrega Garantida
@@ -254,16 +254,16 @@ export default function LojaPublicaPage() {
             Descubra Nossos Produtos & Lançamentos
           </h1>
 
-          <p className="text-sm text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm text-slate-600 max-w-3xl mx-auto leading-relaxed">
             Escolha abaixo a solução perfeita para você ou sua empresa. Todos os links de checkout são protegidos com entrega imediata e suporte dedicado.
           </p>
         </div>
       </section>
 
-      {/* 4. ÁREA PRINCIPAL DA VITRINE */}
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 space-y-6">
-        {/* Filtros de Categoria em Estilo Pílula Leve */}
-        <div className="flex items-center gap-2 pb-2 overflow-x-auto scrollbar-none">
+      {/* 4. ÁREA PRINCIPAL DA VITRINE (FULL WIDTH / FLUIDO PARA QUALQUER MONITOR) */}
+      <main className="flex-1 w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-8">
+        {/* Filtros de Categoria com Quebra de Linha (Sem scroll horizontal) */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pb-1">
           {categoryFilters.map((cat) => {
             const Icon = getCategoryIcon(cat.id);
             const isSelected =
@@ -272,7 +272,7 @@ export default function LojaPublicaPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   isSelected
                     ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30 font-bold"
                     : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/90 shadow-2xs"
@@ -285,7 +285,7 @@ export default function LojaPublicaPage() {
           })}
         </div>
 
-        {/* Listagem de Produtos */}
+        {/* Listagem de Produtos em Grid Fluido (1 a 5/6 colunas conforme o monitor) */}
         {loading ? (
           <div className="py-24 text-center space-y-3">
             <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -317,7 +317,7 @@ export default function LojaPublicaPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5 sm:gap-6">
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
@@ -360,9 +360,9 @@ export default function LojaPublicaPage() {
                 </div>
 
                 {/* Conteúdo & Informações */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div className="space-y-2">
-                    <h2 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
                       {prod.title}
                     </h2>
                     {prod.description && (
@@ -373,21 +373,21 @@ export default function LojaPublicaPage() {
                   </div>
 
                   {/* Preço e Botão de Venda Direta com Confiança */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div>
-                      <span className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider block">
+                      <span className="text-[9px] uppercase text-slate-400 font-semibold tracking-wider block">
                         Valor
                       </span>
-                      <div className="text-base font-extrabold text-emerald-600">
+                      <div className="text-sm sm:text-base font-extrabold text-emerald-600">
                         {prod.price_label || (prod.price ? `R$ ${prod.price}` : "Sob Consulta")}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleShareProduct(prod)}
-                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200 transition"
+                        className="p-2 sm:p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200 transition cursor-pointer"
                         title="Copiar link de venda direta"
                       >
                         {copiedLink === prod.id ? (
@@ -401,11 +401,11 @@ export default function LojaPublicaPage() {
                         href={prod.buy_link}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition hover:scale-[1.02]"
+                        className="inline-flex items-center gap-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition hover:scale-[1.02] cursor-pointer"
                       >
-                        <Lock className="w-3.5 h-3.5 text-blue-200" />
-                        <span>Comprar Direto</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <Lock className="w-3 h-3 text-blue-200" />
+                        <span>Comprar</span>
+                        <ArrowRight className="w-3 h-3" />
                       </a>
                     </div>
                   </div>
@@ -415,10 +415,10 @@ export default function LojaPublicaPage() {
           </div>
         )}
 
-        {/* 5. SEÇÃO DE CONFIANÇA & BENEFÍCIOS (TRANSMITE TOTAL TRANQUILIDADE AO CLIENTE) */}
-        <section className="mt-12 pt-8 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-2 shadow-2xs">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+        {/* 5. SEÇÃO DE CONFIANÇA & BENEFÍCIOS */}
+        <section className="mt-12 pt-8 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-2 shadow-2xs">
+            <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
               <Shield className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">
@@ -429,8 +429,8 @@ export default function LojaPublicaPage() {
             </p>
           </div>
 
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-2 shadow-2xs">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-2 shadow-2xs">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
               <Zap className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">
@@ -441,8 +441,8 @@ export default function LojaPublicaPage() {
             </p>
           </div>
 
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-2 shadow-2xs">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-2 shadow-2xs">
+            <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
               <MessageCircle className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">
@@ -455,17 +455,17 @@ export default function LojaPublicaPage() {
         </section>
 
         {/* 6. DÚVIDAS FREQUENTES (FAQ RÁPIDO PARA QUEBRAR OBJEÇÕES) */}
-        <section className="bg-white border border-slate-200/90 rounded-2xl p-6 space-y-4 shadow-xs">
+        <section className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 space-y-5 shadow-xs">
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-blue-600" />
-            <h3 className="text-sm font-bold text-slate-900">
+            <HelpCircle className="w-5 h-5 text-blue-600" />
+            <h3 className="text-base font-bold text-slate-900">
               Perguntas Frequentes sobre as Compras
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
-            <div className="space-y-1 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-              <span className="font-bold text-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs text-slate-600">
+            <div className="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span className="font-bold text-slate-800 text-[13px] block">
                 1. Quais são as formas de pagamento aceitas?
               </span>
               <p className="text-slate-500 leading-relaxed">
@@ -473,12 +473,21 @@ export default function LojaPublicaPage() {
               </p>
             </div>
 
-            <div className="space-y-1 bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
-              <span className="font-bold text-slate-800">
+            <div className="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span className="font-bold text-slate-800 text-[13px] block">
                 2. Tenho garantia se não ficar satisfeito?
               </span>
               <p className="text-slate-500 leading-relaxed">
                 Sim! Todos os nossos produtos digitais e cursos contam com garantia incondicional de 7 dias conforme o Código de Defesa do Consumidor.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+              <span className="font-bold text-slate-800 text-[13px] block">
+                3. Como recebo meu acesso após o pagamento?
+              </span>
+              <p className="text-slate-500 leading-relaxed">
+                Os dados de acesso, links de download e nota fiscal são enviados automaticamente para o seu e-mail cadastrado no checkout.
               </p>
             </div>
           </div>
@@ -487,7 +496,7 @@ export default function LojaPublicaPage() {
 
       {/* 7. FOOTER DA LOJA */}
       <footer className="border-t border-slate-200 bg-white py-8 text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-700 font-bold">
             <ShoppingBag className="w-4 h-4 text-blue-600" />
             <span>Loja Oficial Lynx • Todos os direitos reservados.</span>

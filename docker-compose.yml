@@ -24,3 +24,4 @@ services:
 
 volumes:
   loja_data:
+
