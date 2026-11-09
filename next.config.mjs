@@ -2,6 +2,28 @@
 const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  async headers() {
+    return [
+      {
+        source: "/loja",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+        ],
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {

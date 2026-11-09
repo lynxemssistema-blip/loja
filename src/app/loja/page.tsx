@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { LynxProduct, ProductCategoryItem } from "../../lib/types";
 import {
@@ -345,13 +347,13 @@ export default function LojaPublicaPage() {
                 key={prod.id}
                 className="bg-white border border-slate-200/90 hover:border-blue-400/80 rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group"
               >
-                {/* Banner / Foto do Produto Inteira (Sem Cortes) */}
-                <div className="relative w-full aspect-[4/3] bg-slate-100/90 flex items-center justify-center p-2.5 overflow-hidden">
+                {/* Banner / Foto do Produto Inteira (Sem Cortes - Ideal para Ebooks e Banners) */}
+                <div className="relative w-full h-64 sm:h-72 bg-gradient-to-b from-slate-100/90 to-slate-200/40 flex items-center justify-center p-3.5 overflow-hidden">
                   {prod.image_url ? (
                     <img
                       src={prod.image_url}
                       alt={prod.title}
-                      className="max-h-full max-w-full w-auto h-auto object-contain rounded-lg group-hover:scale-102 transition-transform duration-300 drop-shadow-xs"
+                      className="max-h-full max-w-full w-auto h-auto object-contain rounded-lg group-hover:scale-103 transition-transform duration-300 drop-shadow-md"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -362,17 +364,18 @@ export default function LojaPublicaPage() {
                     </div>
                   )}
 
-                  {/* Badge de Destaque */}
-                  {prod.badge && (
-                    <div className="absolute top-2.5 left-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
-                      {prod.badge}
-                    </div>
-                  )}
+                  {/* Badges superiores flutuantes */}
+                  <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
+                    {prod.badge ? (
+                      <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
+                        {prod.badge}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
 
-                  {/* Badge de Categoria */}
-                  <div className="absolute top-2.5 right-2.5">
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${getCategoryColor(
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs backdrop-blur-xs ${getCategoryColor(
                         prod.category
                       )}`}
                     >
