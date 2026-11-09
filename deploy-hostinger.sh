@@ -15,7 +15,7 @@ export PATH="/opt/alt/alt-nodejs20/root/usr/bin:$PATH"
 cd "$(dirname "$0")"
 
 echo "📦 Instalando dependências..."
-npm install --omit=dev || npm install
+npm install
 
 echo "⚙️ Compilando Next.js para Produção..."
 npm run build
