@@ -5,6 +5,15 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          },
+        ],
+      },
+      {
         source: "/loja",
         headers: [
           {
@@ -26,11 +35,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      {
-        source: "/",
-        destination: "/loja",
-        permanent: false,
-      },
       {
         source: "/catalogo",
         destination: "/loja",

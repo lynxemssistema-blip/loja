@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
+export const dynamic = "force-dynamic";
 
-export default function RootHomePage() {
-  redirect("/loja");
-}
+export { default } from "./loja/page";
