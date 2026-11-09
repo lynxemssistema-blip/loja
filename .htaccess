@@ -1,6 +1,6 @@
 # ========================================================
 # Hostinger LiteSpeed / Apache Reverse Proxy para Next.js
-# Domínio: loja.lynxems.com.br -> Node.js (127.0.0.1:3005)
+# Domínio: loja.lynxems.com.br -> Node.js (127.0.0.1:31501)
 # ========================================================
 
 RewriteEngine On
@@ -9,8 +9,8 @@ RewriteEngine On
 RequestHeader set X-Forwarded-Proto "https"
 RequestHeader set X-Forwarded-Port "443"
 
-# Redirecionamento para a porta interna 3005 do Node.js
-RewriteRule ^$ http://127.0.0.1:3005/ [P,L]
+# Redirecionamento para a porta interna 31501 do Node.js
+RewriteRule ^$ http://127.0.0.1:31501/ [P,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ http://127.0.0.1:3005/$1 [P,L]
+RewriteRule ^(.*)$ http://127.0.0.1:31501/$1 [P,L]

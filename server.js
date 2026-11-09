@@ -16,8 +16,8 @@ if (fs.existsSync(standaloneServer)) {
   const next = require("next");
 
   const dev = process.env.NODE_ENV !== "production";
-  const hostname = process.env.HOSTNAME || "0.0.0.0";
-  const port = parseInt(process.env.PORT, 10) || 3005;
+  const hostname = process.env.HOSTNAME || "127.0.0.1";
+  const port = parseInt(process.env.PORT, 10) || 31501;
   const app = next({ dev, hostname, port });
   const handle = app.getRequestHandler();
 
@@ -31,9 +31,8 @@ if (fs.existsSync(standaloneServer)) {
         res.statusCode = 500;
         res.end("Internal Server Error");
       }
-    }).listen(port, () => {
+    }).listen(port, hostname, () => {
       console.log(`> Loja Lynx rodando em http://${hostname}:${port}`);
     });
   });
 }
-
