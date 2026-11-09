@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  loja-lynx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: loja-lynx
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_APP_URL=https://loja.lynxems.com.br
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ASAAS_API_URL=${ASAAS_API_URL:-https://api.asaas.com/v3}
+      - ASAAS_API_KEY=${ASAAS_API_KEY}
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-edsonmanoel2012@gmail.com}
+    volumes:
+      - loja_data:/app/.data
+
+volumes:
+  loja_data:
