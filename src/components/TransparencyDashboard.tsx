@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { GroupFinancialReport, LynxUser } from "@/lib/types";
-import { formatBRL } from "@/lib/calculator";
+import { GroupFinancialReport, LynxUser } from "../lib/types";
+import { formatBRL } from "../lib/calculator";
 import {
   ArrowDownRight,
   CheckCircle2,

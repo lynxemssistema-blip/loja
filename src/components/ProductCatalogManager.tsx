@@ -6,7 +6,7 @@ import {
   LynxProduct,
   ProductCategory,
   ProductCategoryItem,
-} from "@/lib/types";
+} from "../lib/types";
 import {
   Briefcase,
   Check,

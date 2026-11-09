@@ -3,8 +3,8 @@ import {
   loadStateWithSupabase,
   syncStateToSupabaseIfConfigured,
   writeLocalDb,
-} from "@/lib/db";
-import { BillingType, LynxPayment, PaymentStatus } from "@/lib/types";
+} from "../../../../lib/db";
+import { BillingType, LynxPayment, PaymentStatus } from "../../../../lib/types";
 
 interface AsaasGroupItem {
   id: string;

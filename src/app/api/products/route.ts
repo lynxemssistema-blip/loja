@@ -3,13 +3,13 @@ import {
   loadStateWithSupabase,
   writeLocalDb,
   syncStateToSupabaseIfConfigured,
-} from "@/lib/db";
+} from "../../../lib/db";
 import {
   DEFAULT_PRODUCT_CATEGORIES,
   LynxProduct,
   ProductCategory,
   ProductCategoryItem,
-} from "@/lib/types";
+} from "../../../lib/types";
 
 const INITIAL_DEMO_PRODUCTS: LynxProduct[] = [
   {

@@ -52,3 +52,4 @@ cp .env.example .env.local
 # 3. Suba o container
 docker compose up -d --build
 ```
+

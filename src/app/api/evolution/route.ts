@@ -3,14 +3,14 @@ import {
   loadStateWithSupabase,
   syncStateToSupabaseIfConfigured,
   writeLocalDb,
-} from "@/lib/db";
+} from "../../../lib/db";
 import {
   EvolutionContact,
   EvolutionInstance,
   EvolutionWhatsAppGroup,
   checkPromotionEligibility,
-} from "@/lib/types";
-import { BRAZIL_DDD_MAP, COUNTRY_CODES, normalizePhoneNumber } from "@/lib/ddd";
+} from "../../../lib/types";
+import { BRAZIL_DDD_MAP, COUNTRY_CODES, normalizePhoneNumber } from "../../../lib/ddd";
 
 /**
  * Valida se um nome é válido (não é vazio, nem número puro, nem id de grupo)

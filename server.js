@@ -36,3 +36,4 @@ if (fs.existsSync(standaloneServer)) {
     });
   });
 }
+

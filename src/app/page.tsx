@@ -9,12 +9,12 @@ import {
   LynxGroupSplit,
   LynxUser,
   PaymentStatus,
-} from "@/lib/types";
-import { calculateGroupFinancialReport, formatBRL } from "@/lib/calculator";
-import TransparencyDashboard from "@/components/TransparencyDashboard";
-import GroupRuleBuilderModal from "@/components/GroupRuleBuilderModal";
-import EvolutionManager from "@/components/EvolutionManager";
-import ProductCatalogManager from "@/components/ProductCatalogManager";
+} from "../lib/types";
+import { calculateGroupFinancialReport, formatBRL } from "../lib/calculator";
+import TransparencyDashboard from "../components/TransparencyDashboard";
+import GroupRuleBuilderModal from "../components/GroupRuleBuilderModal";
+import EvolutionManager from "../components/EvolutionManager";
+import ProductCatalogManager from "../components/ProductCatalogManager";
 import {
   Building2,
   CheckCircle2,

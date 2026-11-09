@@ -9,8 +9,8 @@ import {
   LynxGroupSplit,
   LynxPayment,
   LynxUser,
-} from "@/lib/types";
-import { formatBRL } from "@/lib/calculator";
+} from "../lib/types";
+import { formatBRL } from "../lib/calculator";
 import {
   Plus,
   Trash2,

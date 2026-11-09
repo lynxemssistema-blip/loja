@@ -3,8 +3,8 @@ import {
   loadStateWithSupabase,
   syncStateToSupabaseIfConfigured,
   writeLocalDb,
-} from "@/lib/db";
-import { normalizePhoneNumber } from "@/lib/ddd";
+} from "../../../../lib/db";
+import { normalizePhoneNumber } from "../../../../lib/ddd";
 
 /**
  * Termos que acionam descadastramento automático imediato (Opt-out / PARAR)

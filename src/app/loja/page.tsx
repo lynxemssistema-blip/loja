@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { LynxProduct, ProductCategoryItem } from "@/lib/types";
+import { LynxProduct, ProductCategoryItem } from "../../lib/types";
 import {
   ArrowRight,
   BadgeCheck,

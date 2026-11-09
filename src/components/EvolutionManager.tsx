@@ -8,8 +8,8 @@ import {
   LynxProduct,
   checkPromotionEligibility,
   getEffectiveConsent,
-} from "@/lib/types";
-import { BRAZIL_DDD_MAP } from "@/lib/ddd";
+} from "../lib/types";
+import { BRAZIL_DDD_MAP } from "../lib/ddd";
 import {
   AlertTriangle,
   Ban,

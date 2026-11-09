@@ -5,7 +5,7 @@ import {
   readLocalDb,
   syncStateToSupabaseIfConfigured,
   writeLocalDb,
-} from "@/lib/db";
+} from "../../../lib/db";
 import {
   LynxExpense,
   LynxGroup,
@@ -14,7 +14,7 @@ import {
   LynxPayment,
   LynxPayout,
   LynxUser,
-} from "@/lib/types";
+} from "../../../lib/types";
 
 export async function GET() {
   const { state, supabaseConnected, supabaseMessage } =
