@@ -7,6 +7,12 @@ import {
   writeLocalDb,
 } from "../../../lib/db";
 import {
+  extractTokenFromHeader,
+  hashPassword,
+  sanitizeDatabaseState,
+  verifySessionToken,
+} from "../../../lib/auth";
+import {
   LynxExpense,
   LynxGroup,
   LynxGroupDeduction,
@@ -16,18 +22,63 @@ import {
   LynxUser,
 } from "../../../lib/types";
 
-export async function GET() {
-  const { state, supabaseConnected, supabaseMessage } =
-    await loadStateWithSupabase();
-  return NextResponse.json({
-    state,
-    supabaseConnected,
-    supabaseMessage,
-  });
+export async function GET(req: NextRequest) {
+  try {
+    const token = extractTokenFromHeader(req.headers.get("authorization"));
+    const sessionUser = verifySessionToken(token);
+
+    if (!sessionUser) {
+      return NextResponse.json(
+        {
+          error: "Acesso não autorizado. Por favor faça login.",
+          authenticated: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    const { state, supabaseConnected, supabaseMessage } =
+      await loadStateWithSupabase();
+
+    const sanitizedState = sanitizeDatabaseState(state, sessionUser);
+
+    return NextResponse.json({
+      ok: true,
+      authenticated: true,
+      user: sessionUser,
+      state: sanitizedState,
+      supabaseConnected,
+      supabaseMessage,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const token = extractTokenFromHeader(req.headers.get("authorization"));
+    const sessionUser = verifySessionToken(token);
+
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado. Token de sessão ausente ou inválido." },
+        { status: 401 }
+      );
+    }
+
+    const isSuperAdmin =
+      sessionUser.role === "SUPERADMIN" ||
+      sessionUser.email.toLowerCase() === "edsonmanoel2012@gmail.com";
+
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Permissão insuficiente. Apenas administradores podem modificar o sistema." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { action, payload } = body;
     let state = readLocalDb();
@@ -36,26 +87,35 @@ export async function POST(req: NextRequest) {
       case "SAVE_PARTNER": {
         const user = payload as LynxUser;
         const existingIdx = state.users.findIndex((u) => u.id === user.id);
+        const userToSave: LynxUser = { ...user };
+
+        // Protege hash de senha
+        if (userToSave.password && !userToSave.password.startsWith("scrypt$")) {
+          userToSave.password = hashPassword(userToSave.password);
+        } else if (!userToSave.password && existingIdx >= 0) {
+          userToSave.password = state.users[existingIdx].password;
+        }
+
         if (existingIdx >= 0) {
           state.users[existingIdx] = {
             ...state.users[existingIdx],
-            ...user,
+            ...userToSave,
             // SuperAdmin principal nunca perde permissão de SUPERADMIN
             role:
-              user.email.toLowerCase() === "edsonmanoel2012@gmail.com"
+              userToSave.email.toLowerCase() === "edsonmanoel2012@gmail.com"
                 ? "SUPERADMIN"
-                : user.role,
+                : userToSave.role,
           };
         } else {
           state.users.push({
-            ...user,
-            id: user.id || `usr-${Date.now()}`,
+            ...userToSave,
+            id: userToSave.id || `usr-${Date.now()}`,
             created_at: new Date().toISOString(),
           });
         }
 
         // Se vierem grupos autorizados no payload.authorizedGroupIds, garante vínculo visual
-        if (Array.isArray( body.authorizedGroupIds )) {
+        if (Array.isArray(body.authorizedGroupIds)) {
           const authIds: string[] = body.authorizedGroupIds;
           const partnerId =
             existingIdx >= 0
@@ -258,9 +318,18 @@ export async function POST(req: NextRequest) {
       }
 
       case "SAVE_SETTINGS": {
+        // Preserva chaves existentes se o usuário não alterou (ex: se vier a máscara ••••••)
+        const incomingSettings = { ...payload };
+        if (incomingSettings.asaas_api_key && incomingSettings.asaas_api_key.includes("•")) {
+          delete incomingSettings.asaas_api_key;
+        }
+        if (incomingSettings.supabase_service_role_key && incomingSettings.supabase_service_role_key.includes("•")) {
+          delete incomingSettings.supabase_service_role_key;
+        }
+
         state.settings = {
           ...state.settings,
-          ...payload,
+          ...incomingSettings,
         };
         break;
       }
@@ -282,7 +351,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      state,
+      state: sanitizeDatabaseState(state, sessionUser),
       supabaseSync: syncResult,
     });
   } catch (err: unknown) {
@@ -290,4 +359,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

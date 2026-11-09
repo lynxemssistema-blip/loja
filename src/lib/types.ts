@@ -185,6 +185,10 @@ export interface LynxProduct {
   badge?: string; // ex: "Destaque", "Lançamento", "Mais Vendido"
   active: boolean;
   order?: number;
+  clicks_count?: number; // Total de cliques / acessos
+  sales_count?: number; // Total de vendas confirmadas / conversões
+  rating?: number; // Avaliação de 1.0 a 5.0 estrelas
+  reviews_count?: number; // Quantidade de depoimentos / avaliações
   created_at: string;
   updated_at: string;
 }

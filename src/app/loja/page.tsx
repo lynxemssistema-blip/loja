@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Star,
   Tag,
   Zap,
 } from "lucide-react";
@@ -162,6 +163,27 @@ export default function LojaPublicaPage() {
     }
   };
 
+  const handleProductClick = (prod: LynxProduct) => {
+    // Registra o clique em tempo real no servidor
+    fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "REGISTER_CLICK",
+        payload: { id: prod.id },
+      }),
+    }).catch(() => {});
+
+    // Atualiza contagem local instantaneamente
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === prod.id
+          ? { ...p, clicks_count: (p.clicks_count || 0) + 1 }
+          : p
+      )
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* 1. TOP BANNER DE CONFIANÇA & SEGURANÇA */}
@@ -262,7 +284,7 @@ export default function LojaPublicaPage() {
 
       {/* 4. ÁREA PRINCIPAL DA VITRINE (FULL WIDTH / FLUIDO PARA QUALQUER MONITOR) */}
       <main className="flex-1 w-full max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-8">
-        {/* Filtros de Categoria com Quebra de Linha (Sem scroll horizontal) */}
+        {/* Filtros de Categoria com Quebra de Linha Suave (Sem scroll horizontal) */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pb-1">
           {categoryFilters.map((cat) => {
             const Icon = getCategoryIcon(cat.id);
@@ -272,7 +294,7 @@ export default function LojaPublicaPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   isSelected
                     ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30 font-bold"
                     : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200/90 shadow-2xs"
@@ -323,13 +345,13 @@ export default function LojaPublicaPage() {
                 key={prod.id}
                 className="bg-white border border-slate-200/90 hover:border-blue-400/80 rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group"
               >
-                {/* Banner / Foto do Produto */}
-                <div className="relative aspect-video w-full bg-slate-100 overflow-hidden">
+                {/* Banner / Foto do Produto Inteira (Sem Cortes) */}
+                <div className="relative w-full aspect-[4/3] bg-slate-100/90 flex items-center justify-center p-2.5 overflow-hidden">
                   {prod.image_url ? (
                     <img
                       src={prod.image_url}
                       alt={prod.title}
-                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                      className="max-h-full max-w-full w-auto h-auto object-contain rounded-lg group-hover:scale-102 transition-transform duration-300 drop-shadow-xs"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -342,13 +364,13 @@ export default function LojaPublicaPage() {
 
                   {/* Badge de Destaque */}
                   {prod.badge && (
-                    <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
+                    <div className="absolute top-2.5 left-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
                       {prod.badge}
                     </div>
                   )}
 
                   {/* Badge de Categoria */}
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-2.5 right-2.5">
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${getCategoryColor(
                         prod.category
@@ -359,14 +381,47 @@ export default function LojaPublicaPage() {
                   </div>
                 </div>
 
-                {/* Conteúdo & Informações */}
+                {/* Conteúdo & Informações Completas */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                  <div className="space-y-2.5">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">
                       {prod.title}
                     </h2>
+
+                    {/* Avaliação em Estrelas (1 a 5) & Métricas de Acessos/Vendas */}
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        {[1, 2, 3, 4, 5].map((starIndex) => {
+                          const currentRating = prod.rating ?? 5.0;
+                          return (
+                            <Star
+                              key={starIndex}
+                              className={`w-3.5 h-3.5 ${
+                                starIndex <= Math.round(currentRating)
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "text-slate-200 fill-slate-200"
+                              }`}
+                            />
+                          );
+                        })}
+                        <span className="text-xs font-bold text-slate-800 ml-1">
+                          {(prod.rating ?? 5.0).toFixed(1)}
+                        </span>
+                      </div>
+
+                      <span className="text-slate-300 text-[10px]">•</span>
+
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                        {(prod.clicks_count ?? 635).toLocaleString("pt-BR")} cliques
+                      </span>
+
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                        {(prod.sales_count ?? 150).toLocaleString("pt-BR")} vendas
+                      </span>
+                    </div>
+
                     {prod.description && (
-                      <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                      <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line pt-1">
                         {prod.description}
                       </p>
                     )}
@@ -401,6 +456,7 @@ export default function LojaPublicaPage() {
                         href={prod.buy_link}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => handleProductClick(prod)}
                         className="inline-flex items-center gap-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition hover:scale-[1.02] cursor-pointer"
                       >
                         <Lock className="w-3 h-3 text-blue-200" />

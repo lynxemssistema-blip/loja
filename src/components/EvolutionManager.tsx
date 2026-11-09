@@ -215,6 +215,17 @@ export default function EvolutionManager({
   onRefreshData,
   notify,
 }: Props) {
+  function getAuthHeaders() {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("lynx_session_token") || ""
+        : "";
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  }
+
   const [mainTab, setMainTab] = useState<MainTab>("CONTACTS");
   const [category, setCategory] = useState<ContactCategory>("UNIQUE");
 
@@ -448,7 +459,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SAVE_INSTANCE",
           payload: {
@@ -487,7 +498,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "BULK_ADD_INSTANCES",
           payload: {
@@ -522,7 +533,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "DISCOVER_SERVER_INSTANCES",
           payload: {
@@ -551,7 +562,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "CHECK_INSTANCE_STATUS",
           payload: { instanceId: id },
@@ -577,7 +588,7 @@ export default function EvolutionManager({
     try {
       await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "DELETE_INSTANCE",
           payload: { instanceId: id },
@@ -601,7 +612,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: "SYNC_ALL_CONTACTS", payload: {} }),
       });
 
@@ -628,7 +639,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: "FETCH_GROUPS_LIST", payload: {} }),
       });
       const data = await res.json();
@@ -647,7 +658,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "EXTRACT_GROUP_MEMBERS",
           payload: { groupJids: selectedGroupJids },
@@ -678,7 +689,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: "ENRICH_CONTACT_PROFILES", payload: {} }),
       });
 
@@ -706,7 +717,7 @@ export default function EvolutionManager({
     try {
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SAVE_LEAD_DETAILS",
           payload: editingLead,
@@ -848,7 +859,7 @@ export default function EvolutionManager({
       setCampaignSending(true);
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SEND_CATALOG_CAMPAIGN",
           payload: {
@@ -929,7 +940,7 @@ export default function EvolutionManager({
       setPromoSending(true);
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SEND_PROMOTION_CAMPAIGN",
           payload: {
@@ -972,7 +983,7 @@ export default function EvolutionManager({
       setUpdatingConsentId(contactId);
       const res = await fetch("/api/evolution", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "UPDATE_CONSENT",
           payload: {

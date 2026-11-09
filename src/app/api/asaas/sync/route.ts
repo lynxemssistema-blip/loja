@@ -4,6 +4,10 @@ import {
   syncStateToSupabaseIfConfigured,
   writeLocalDb,
 } from "../../../../lib/db";
+import {
+  extractTokenFromHeader,
+  verifySessionToken,
+} from "../../../../lib/auth";
 import { BillingType, LynxPayment, PaymentStatus } from "../../../../lib/types";
 
 interface AsaasGroupItem {
@@ -87,6 +91,27 @@ async function fetchAllAsaasPages<T>(
 
 export async function POST(req: NextRequest) {
   try {
+    const token = extractTokenFromHeader(req.headers.get("authorization"));
+    const sessionUser = verifySessionToken(token);
+
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado. Faça login para sincronizar dados com o Asaas." },
+        { status: 401 }
+      );
+    }
+
+    const isSuperAdmin =
+      sessionUser.role === "SUPERADMIN" ||
+      sessionUser.email.toLowerCase() === "edsonmanoel2012@gmail.com";
+
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Permissão insuficiente. Apenas administradores podem acionar sincronização com o Asaas." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { state } = await loadStateWithSupabase();
 

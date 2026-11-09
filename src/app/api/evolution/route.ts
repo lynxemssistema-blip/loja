@@ -5,6 +5,10 @@ import {
   writeLocalDb,
 } from "../../../lib/db";
 import {
+  extractTokenFromHeader,
+  verifySessionToken,
+} from "../../../lib/auth";
+import {
   EvolutionContact,
   EvolutionInstance,
   EvolutionWhatsAppGroup,
@@ -62,14 +66,76 @@ function isEphemeralWhatsappCdn(url?: string): boolean {
   );
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const token = extractTokenFromHeader(req.headers.get("authorization"));
+  const sessionUser = verifySessionToken(token);
+
+  if (!sessionUser) {
+    return NextResponse.json(
+      { error: "Acesso não autorizado. Faça login para acessar os recursos da Evolution API." },
+      { status: 401 }
+    );
+  }
+
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get("action");
   const { state } = await loadStateWithSupabase();
   const instances = state.evolution_instances || [];
   const contacts = state.evolution_contacts || [];
 
+  // Carregamento sob demanda da base completa de contatos apenas na aba de Leads
+  if (action === "all_contacts") {
+    return NextResponse.json({
+      ok: true,
+      contacts,
+    });
+  }
+
+  // Se for busca paginada de contatos sob demanda
+  if (action === "contacts") {
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(200, Math.max(10, parseInt(searchParams.get("limit") || "50", 10)));
+    const search = (searchParams.get("search") || "").trim().toLowerCase();
+    const category = searchParams.get("category");
+
+    let filtered = contacts;
+
+    if (category === "UNIQUE") filtered = filtered.filter((c) => !c.is_repeated);
+    else if (category === "REPEATED") filtered = filtered.filter((c) => c.is_repeated);
+    else if (category === "GROUPS") filtered = filtered.filter((c) => c.source_type === "GROUP_MEMBER");
+    else if (category === "NATIONAL") filtered = filtered.filter((c) => c.is_national);
+    else if (category === "INTERNATIONAL") filtered = filtered.filter((c) => !c.is_national);
+
+    if (search) {
+      filtered = filtered.filter(
+        (c) =>
+          (c.name || "").toLowerCase().includes(search) ||
+          (c.phone || "").includes(search) ||
+          (c.email || "").toLowerCase().includes(search) ||
+          (c.ddd || "").includes(search)
+      );
+    }
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginated = filtered.slice(startIndex, startIndex + limit);
+
+    return NextResponse.json({
+      ok: true,
+      contacts: paginated,
+      total,
+      page,
+      limit,
+      totalPages,
+    });
+  }
+
+  // Resposta padrão (instâncias e estatísticas sem os 10.8MB de contatos em massa)
   return NextResponse.json({
+    ok: true,
     instances,
-    contacts,
+    contacts: [], // Protegido contra payload gigante
     stats: {
       totalInstances: instances.length,
       connectedInstances: instances.filter((i) => i.status === "open").length,
@@ -87,6 +153,27 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const token = extractTokenFromHeader(req.headers.get("authorization"));
+    const sessionUser = verifySessionToken(token);
+
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado. Token ausente ou inválido." },
+        { status: 401 }
+      );
+    }
+
+    const isSuperAdmin =
+      sessionUser.role === "SUPERADMIN" ||
+      sessionUser.email.toLowerCase() === "edsonmanoel2012@gmail.com";
+
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Permissão insuficiente. Apenas administradores podem gerenciar a Evolution API." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { action, payload } = body;
     const { state } = await loadStateWithSupabase();

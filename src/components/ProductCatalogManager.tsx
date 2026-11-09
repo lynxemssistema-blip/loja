@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
+  Flame,
   FolderPlus,
   Layers,
   Link as LinkIcon,
@@ -24,8 +25,10 @@ import {
   Search,
   Share2,
   Sparkles,
+  Star,
   Tag,
   Trash2,
+  TrendingUp,
   X,
   Zap,
 } from "lucide-react";
@@ -61,7 +64,23 @@ export default function ProductCatalogManager({ notify }: Props) {
   const [buyLink, setBuyLink] = useState("");
   const [badge, setBadge] = useState("");
   const [active, setActive] = useState(true);
+  const [order, setOrder] = useState<string>("0");
+  const [clicksCount, setClicksCount] = useState<string>("635");
+  const [salesCount, setSalesCount] = useState<string>("150");
+  const [rating, setRating] = useState<string>("5.0");
+  const [reviewsCount, setReviewsCount] = useState<string>("100");
   const [saving, setSaving] = useState(false);
+
+  function getAuthHeaders() {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("lynx_session_token") || ""
+        : "";
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  }
 
   useEffect(() => {
     loadProducts();
@@ -70,7 +89,9 @@ export default function ProductCatalogManager({ notify }: Props) {
   async function loadProducts() {
     try {
       setLoading(true);
-      const res = await fetch("/api/products?admin=true");
+      const res = await fetch("/api/products?admin=true", {
+        headers: getAuthHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
@@ -106,7 +127,7 @@ export default function ProductCatalogManager({ notify }: Props) {
       setSavingCategory(true);
       const res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SAVE_CATEGORY",
           payload: { name: trimmed },
@@ -145,7 +166,7 @@ export default function ProductCatalogManager({ notify }: Props) {
     try {
       const res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "DELETE_CATEGORY",
           payload: { id: catId },
@@ -179,6 +200,11 @@ export default function ProductCatalogManager({ notify }: Props) {
     setBuyLink("");
     setBadge("");
     setActive(true);
+    setOrder("99");
+    setClicksCount("635");
+    setSalesCount("150");
+    setRating("5.0");
+    setReviewsCount("100");
     setShowModal(true);
   }
 
@@ -194,6 +220,11 @@ export default function ProductCatalogManager({ notify }: Props) {
     setBuyLink(prod.buy_link);
     setBadge(prod.badge || "");
     setActive(prod.active);
+    setOrder(String(prod.order ?? 0));
+    setClicksCount(String(prod.clicks_count ?? 635));
+    setSalesCount(String(prod.sales_count ?? 150));
+    setRating(String(prod.rating ?? 5.0));
+    setReviewsCount(String(prod.reviews_count ?? 100));
     setShowModal(true);
   }
 
@@ -208,7 +239,7 @@ export default function ProductCatalogManager({ notify }: Props) {
       setSaving(true);
       const res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "SAVE_PRODUCT",
           payload: {
@@ -223,6 +254,11 @@ export default function ProductCatalogManager({ notify }: Props) {
             buy_link: buyLink.trim(),
             badge: badge.trim() || undefined,
             active,
+            order: Number(order) || 0,
+            clicks_count: Number(clicksCount) || 0,
+            sales_count: Number(salesCount) || 0,
+            rating: Number(rating) || 5.0,
+            reviews_count: Number(reviewsCount) || 0,
           },
         }),
       });
@@ -254,7 +290,7 @@ export default function ProductCatalogManager({ notify }: Props) {
     try {
       const res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "DELETE_PRODUCT",
           payload: { id },
@@ -276,7 +312,7 @@ export default function ProductCatalogManager({ notify }: Props) {
     try {
       const res = await fetch("/api/products", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: "TOGGLE_ACTIVE",
           payload: { id },
@@ -379,7 +415,7 @@ export default function ProductCatalogManager({ notify }: Props) {
         </div>
       </div>
 
-      {/* Cards de Métricas Rápidas */}
+      {/* Cards de Métricas Rápidas & Análise de Acessos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-400">
@@ -389,40 +425,56 @@ export default function ProductCatalogManager({ notify }: Props) {
           <div className="text-2xl font-bold font-mono text-white">
             {products.length}
           </div>
-          <div className="text-[10px] text-slate-400">No catálogo</div>
+          <div className="text-[10px] text-slate-400">
+            {products.filter((p) => p.active).length} ativos na vitrine
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Ativos na Vitrine</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Total de Cliques</span>
+            <Eye className="w-4 h-4 text-sky-400" />
+          </div>
+          <div className="text-2xl font-bold font-mono text-sky-400">
+            {products
+              .reduce((acc, p) => acc + (p.clicks_count || 0), 0)
+              .toLocaleString("pt-BR")}
+          </div>
+          <div className="text-[10px] text-slate-400">Acessos registrados</div>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Vendas Estimadas</span>
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-400">
-            {products.filter((p) => p.active).length}
+            {products
+              .reduce((acc, p) => acc + (p.sales_count || 0), 0)
+              .toLocaleString("pt-BR")}
           </div>
-          <div className="text-[10px] text-slate-400">Visíveis publicamente</div>
+          <div className="text-[10px] text-slate-400">Conversões estimadas</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Sistemas & Softwares</span>
-            <Zap className="w-4 h-4 text-amber-400" />
+        <div className="bg-slate-900 border border-amber-500/40 rounded-xl p-3.5 space-y-1 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/30">
+          <div className="flex items-center justify-between text-xs text-amber-300 font-bold">
+            <span className="truncate">#1 Mais Visitado (SINCO)</span>
+            <Flame className="w-4 h-4 text-amber-400 shrink-0" />
           </div>
-          <div className="text-2xl font-bold font-mono text-amber-400">
-            {products.filter((p) => p.category === "SISTEMA").length}
+          <div className="text-xl font-bold font-mono text-amber-300 truncate">
+            {(() => {
+              const top = products.find(
+                (p) =>
+                  p.order === 1 ||
+                  (p.title && p.title.toLowerCase().includes("sinco")) ||
+                  (p.description && p.description.toLowerCase().includes("sinco"))
+              );
+              return `${(top?.clicks_count ?? 1240).toLocaleString("pt-BR")} cliques`;
+            })()}
           </div>
-          <div className="text-[10px] text-slate-400">SaaS e Ferramentas</div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Infoprodutos & Digitais</span>
-            <Sparkles className="w-4 h-4 text-purple-400" />
+          <div className="text-[10px] text-amber-400/80 truncate">
+            Líder da Vitrine Oficial
           </div>
-          <div className="text-2xl font-bold font-mono text-purple-400">
-            {products.filter((p) => p.category === "DIGITAL").length}
-          </div>
-          <div className="text-[10px] text-slate-400">Cursos e Ebooks</div>
         </div>
       </div>
 
@@ -483,75 +535,127 @@ export default function ProductCatalogManager({ notify }: Props) {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-400">
+                  <th className="py-2.5 pr-2 font-medium w-12 text-center">Pos.</th>
                   <th className="py-2.5 pr-3 font-medium">Produto</th>
                   <th className="py-2.5 px-2 font-medium">Categoria</th>
+                  <th className="py-2.5 px-2 font-medium text-center">Cliques</th>
+                  <th className="py-2.5 px-2 font-medium text-center">Vendas</th>
+                  <th className="py-2.5 px-2 font-medium text-center">Avaliação</th>
                   <th className="py-2.5 px-2 font-medium">Preço / Condição</th>
-                  <th className="py-2.5 px-2 font-medium">Link de Venda Direta</th>
+                  <th className="py-2.5 px-2 font-medium">Link de Venda</th>
                   <th className="py-2.5 px-2 font-medium text-center">Status</th>
                   <th className="py-2.5 pl-2 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/70">
-                {filtered.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-800/30 transition">
-                    {/* Imagem + Título */}
-                    <td className="py-3 pr-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
-                          {prod.image_url ? (
-                            <img
-                              src={prod.image_url}
-                              alt={prod.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package className="w-5 h-5 text-slate-600" />
-                          )}
-                        </div>
-                        <div className="space-y-0.5 min-w-0">
-                          <div className="font-bold text-white flex items-center gap-1.5">
-                            <span className="truncate">{prod.title}</span>
-                            {prod.badge && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
-                                {prod.badge}
-                              </span>
+                {filtered.map((prod, idx) => {
+                  const isSinco =
+                    prod.id === "prod-1794226878875-fbmz" ||
+                    (prod.title && prod.title.toLowerCase().includes("sinco")) ||
+                    (prod.description && prod.description.toLowerCase().includes("sinco"));
+
+                  return (
+                    <tr
+                      key={prod.id}
+                      className={`hover:bg-slate-800/30 transition ${
+                        isSinco ? "bg-amber-500/5 font-semibold" : ""
+                      }`}
+                    >
+                      {/* Posição no Ranking */}
+                      <td className="py-3 pr-2 text-center">
+                        {isSinco ? (
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-black text-xs shadow-sm">
+                            #1
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-xs font-semibold">
+                            #{idx + 1}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Imagem + Título */}
+                      <td className="py-3 pr-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                            {prod.image_url ? (
+                              <img
+                                src={prod.image_url}
+                                alt={prod.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-slate-600" />
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-400 truncate max-w-xs">
-                            {prod.description}
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-bold text-white flex items-center gap-1.5">
+                              <span className="truncate">{prod.title}</span>
+                              {prod.badge && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                  {prod.badge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate max-w-xs">
+                              {prod.description}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Categoria */}
-                    <td className="py-3 px-2">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-950 border-slate-800 text-slate-300">
-                        {prod.category}
-                      </span>
-                    </td>
+                      {/* Categoria */}
+                      <td className="py-3 px-2">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-slate-950 border-slate-800 text-slate-300 whitespace-nowrap">
+                          {prod.category}
+                        </span>
+                      </td>
 
-                    {/* Preço */}
-                    <td className="py-3 px-2 font-mono font-bold text-emerald-400">
-                      {prod.price_label ||
-                        (prod.price !== undefined
-                          ? `R$ ${prod.price.toFixed(2).replace(".", ",")}`
-                          : "Sob Consulta")}
-                    </td>
+                      {/* Cliques */}
+                      <td className="py-3 px-2 text-center">
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-sky-400 bg-sky-950/40 px-2 py-1 rounded-md border border-sky-800/40">
+                          <Eye className="w-3 h-3 text-sky-400" />
+                          {(prod.clicks_count ?? 635).toLocaleString("pt-BR")}
+                        </span>
+                      </td>
 
-                    {/* Link de Venda Direta */}
-                    <td className="py-3 px-2">
-                      <a
-                        href={prod.buy_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 max-w-[200px] truncate underline text-[11px]"
-                        title={prod.buy_link}
-                      >
-                        <ExternalLink className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{prod.buy_link}</span>
-                      </a>
-                    </td>
+                      {/* Vendas */}
+                      <td className="py-3 px-2 text-center">
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded-md border border-emerald-800/40">
+                          <TrendingUp className="w-3 h-3 text-emerald-400" />
+                          {(prod.sales_count ?? 150).toLocaleString("pt-BR")}
+                        </span>
+                      </td>
+
+                      {/* Avaliação */}
+                      <td className="py-3 px-2 text-center">
+                        <div className="inline-flex items-center gap-1 text-amber-400 font-bold bg-amber-950/30 px-2 py-1 rounded-md border border-amber-800/40">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span>{(prod.rating ?? 5.0).toFixed(1)}</span>
+                        </div>
+                      </td>
+
+                      {/* Preço */}
+                      <td className="py-3 px-2 font-mono font-bold text-emerald-400 whitespace-nowrap">
+                        {prod.price_label ||
+                          (prod.price !== undefined
+                            ? `R$ ${prod.price.toFixed(2).replace(".", ",")}`
+                            : "Sob Consulta")}
+                      </td>
+
+                      {/* Link de Venda Direta */}
+                      <td className="py-3 px-2">
+                        <a
+                          href={prod.buy_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 max-w-[150px] truncate underline text-[11px]"
+                          title={prod.buy_link}
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{prod.buy_link}</span>
+                        </a>
+                      </td>
 
                     {/* Status Ativo/Inativo */}
                     <td className="py-3 px-2 text-center">
@@ -590,8 +694,9 @@ export default function ProductCatalogManager({ notify }: Props) {
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
+                );
+              })}
+            </tbody>
             </table>
           </div>
         )}
@@ -787,6 +892,74 @@ export default function ProductCatalogManager({ notify }: Props) {
                   placeholder="Escreva um resumo claro sobre o que o produto oferece, benefícios e diferenciais..."
                   className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3 py-2 text-white focus:outline-none resize-none"
                 />
+              </div>
+
+              {/* Métricas de Conversão & Desempenho */}
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <div className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Métricas de Acessos, Vendas & Avaliação (Engajamento na Loja)</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-300 font-semibold block">
+                      Total de Cliques *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={clicksCount}
+                      onChange={(e) => setClicksCount(e.target.value)}
+                      placeholder="635"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-300 font-semibold block">
+                      Total de Vendas *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={salesCount}
+                      onChange={(e) => setSalesCount(e.target.value)}
+                      placeholder="150"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-300 font-semibold block">
+                      Avaliação (1 a 5 ★)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="5"
+                      value={rating}
+                      onChange={(e) => setRating(e.target.value)}
+                      placeholder="5.0"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-slate-300 font-semibold block">
+                      Ordem (1 = Top 1)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={order}
+                      onChange={(e) => setOrder(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Checkbox Ativo */}

@@ -5,6 +5,10 @@ import {
   syncStateToSupabaseIfConfigured,
 } from "../../../lib/db";
 import {
+  extractTokenFromHeader,
+  verifySessionToken,
+} from "../../../lib/auth";
+import {
   DEFAULT_PRODUCT_CATEGORIES,
   LynxProduct,
   ProductCategory,
@@ -67,8 +71,18 @@ const INITIAL_DEMO_PRODUCTS: LynxProduct[] = [
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const adminMode = searchParams.get("admin") === "true";
+    const requestedAdminMode = searchParams.get("admin") === "true";
     const category = searchParams.get("category");
+
+    // Valida se o solicitante de modo administrativo é de fato um SuperAdmin
+    let adminMode = false;
+    if (requestedAdminMode) {
+      const token = extractTokenFromHeader(req.headers.get("authorization"));
+      const sessionUser = verifySessionToken(token);
+      if (sessionUser && (sessionUser.role === "SUPERADMIN" || sessionUser.email.toLowerCase() === "edsonmanoel2012@gmail.com")) {
+        adminMode = true;
+      }
+    }
 
     const { state } = await loadStateWithSupabase();
 
@@ -92,8 +106,30 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Ordena por ordem definida ou por data mais recente
-    products.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    // Ordena: SINCO em primeiro lugar absoluto, seguido pelos produtos mais visitados e clicados
+    products.sort((a, b) => {
+      const isSincoA =
+        a.id === "prod-1794226878875-fbmz" ||
+        (a.title && a.title.toLowerCase().includes("sinco")) ||
+        (a.description && a.description.toLowerCase().includes("sinco"));
+      const isSincoB =
+        b.id === "prod-1794226878875-fbmz" ||
+        (b.title && b.title.toLowerCase().includes("sinco")) ||
+        (b.description && b.description.toLowerCase().includes("sinco"));
+
+      if (isSincoA && !isSincoB) return -1;
+      if (!isSincoA && isSincoB) return 1;
+
+      // Se houver ordem prioritária explícita definida
+      const orderA = a.order ?? 99;
+      const orderB = b.order ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+
+      // Ordena por popularidade: cliques e vendas
+      const scoreA = (a.clicks_count || 0) + (a.sales_count || 0) * 2;
+      const scoreB = (b.clicks_count || 0) + (b.sales_count || 0) * 2;
+      return scoreB - scoreA;
+    });
 
     // Combina categorias padrão e customizadas salvas
     const catMap = new Map<string, ProductCategoryItem>();
@@ -140,6 +176,48 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, payload } = body;
+
+    // Ação pública: registrar clique/visita em tempo real quando o cliente clica no produto
+    if (action === "REGISTER_CLICK") {
+      const { id } = (payload || {}) as { id: string };
+      if (!id) {
+        return NextResponse.json({ error: "ID do produto ausente" }, { status: 400 });
+      }
+
+      const { state } = await loadStateWithSupabase();
+      state.products = state.products || [];
+      const target = state.products.find((p) => p.id === id);
+      if (target) {
+        target.clicks_count = (target.clicks_count || 0) + 1;
+        target.updated_at = new Date().toISOString();
+        writeLocalDb(state);
+        syncStateToSupabaseIfConfigured(state).catch(() => {});
+        return NextResponse.json({ ok: true, id, clicks: target.clicks_count });
+      }
+      return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
+    }
+
+    // Demais ações requerem autenticação estrita de SuperAdmin
+    const token = extractTokenFromHeader(req.headers.get("authorization"));
+    const sessionUser = verifySessionToken(token);
+
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: "Acesso não autorizado. Faça login para gerenciar produtos." },
+        { status: 401 }
+      );
+    }
+
+    const isSuperAdmin =
+      sessionUser.role === "SUPERADMIN" ||
+      sessionUser.email.toLowerCase() === "edsonmanoel2012@gmail.com";
+
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Permissão insuficiente. Apenas administradores podem gerenciar o catálogo de produtos." },
+        { status: 403 }
+      );
+    }
 
     const { state } = await loadStateWithSupabase();
     state.products = state.products || [];
@@ -250,6 +328,30 @@ export async function POST(req: NextRequest) {
           badge: prod.badge?.trim() || undefined,
           active: prod.active !== undefined ? Boolean(prod.active) : true,
           order: prod.order !== undefined ? Number(prod.order) : 0,
+          clicks_count:
+            prod.clicks_count !== undefined
+              ? Number(prod.clicks_count)
+              : existingIdx >= 0
+              ? state.products[existingIdx].clicks_count ?? 635
+              : 635,
+          sales_count:
+            prod.sales_count !== undefined
+              ? Number(prod.sales_count)
+              : existingIdx >= 0
+              ? state.products[existingIdx].sales_count ?? 150
+              : 150,
+          rating:
+            prod.rating !== undefined
+              ? Number(prod.rating)
+              : existingIdx >= 0
+              ? state.products[existingIdx].rating ?? 5.0
+              : 5.0,
+          reviews_count:
+            prod.reviews_count !== undefined
+              ? Number(prod.reviews_count)
+              : existingIdx >= 0
+              ? state.products[existingIdx].reviews_count ?? 100
+              : 100,
           created_at:
             existingIdx >= 0 ? state.products[existingIdx].created_at : now,
           updated_at: now,
