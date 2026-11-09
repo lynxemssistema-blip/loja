@@ -18,7 +18,9 @@ echo "📦 Instalando dependências..."
 npm install
 
 echo "⚙️ Compilando Next.js para Produção..."
-npm run build
+export NEXT_CPU_NUM=1
+export NODE_OPTIONS="--max-old-space-size=512"
+npx next build --no-lint
 
 echo "🔄 Reiniciando processo anterior..."
 fuser -k 3000/tcp 2>/dev/null || true
