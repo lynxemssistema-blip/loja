@@ -31,6 +31,7 @@ import {
   Server,
   Settings,
   Shield,
+  ShieldCheck,
   Sliders,
   Trash2,
   UserCheck,
@@ -557,8 +558,6 @@ export default function ParceiroLynxApp() {
                   className={`w-3.5 h-3.5 ${syncingAsaas ? "animate-spin" : ""}`}
                 />
                 {syncingAsaas ? "Sincronizando..." : "Sincronizar Asaas"}
-              </button>
-            )}
               </button>
             )}
           </div>
