@@ -8,6 +8,9 @@ set -e
 
 echo "🚀 Iniciando deploy da Loja Lynx..."
 
+# Garante que o Node 20 da Hostinger esteja no PATH
+export PATH="/opt/alt/alt-nodejs20/root/usr/bin:$PATH"
+
 # Garante que está no diretório correto
 cd "$(dirname "$0")"
 
