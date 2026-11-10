@@ -1110,11 +1110,13 @@ export async function POST(req: NextRequest) {
           contact_ids,
           message_template,
           catalog_url,
+          image_url,
         } = payload as {
           instance_name: string;
           contact_ids: string[];
           message_template?: string;
           catalog_url?: string;
+          image_url?: string;
         };
 
         const cleanInstName = (instance_name || "").trim();
@@ -1174,18 +1176,53 @@ export async function POST(req: NextRequest) {
             .replace(/\{link_catalogo\}/gi, finalCatalogUrl);
 
           try {
-            const sendUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
-            const res = await fetch(sendUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: salesInstance.api_key,
-              },
-              body: JSON.stringify({
-                number: contact.phone,
-                text: personalizedMsg,
-              }),
-            });
+            let res: Response;
+            if (image_url && typeof image_url === "string" && image_url.trim()) {
+              const sendMediaUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendMedia/${encodeURIComponent(salesInstance.name)}`;
+              res = await fetch(sendMediaUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: salesInstance.api_key,
+                },
+                body: JSON.stringify({
+                  number: contact.phone,
+                  mediatype: "image",
+                  mimetype: "image/jpeg",
+                  caption: personalizedMsg,
+                  media: image_url.trim(),
+                }),
+              });
+
+              // Fallback gracioso para texto se o envio de mídia falhar
+              if (!res.ok) {
+                const sendTextUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
+                res = await fetch(sendTextUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    apikey: salesInstance.api_key,
+                  },
+                  body: JSON.stringify({
+                    number: contact.phone,
+                    text: personalizedMsg,
+                  }),
+                });
+              }
+            } else {
+              const sendUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
+              res = await fetch(sendUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: salesInstance.api_key,
+                },
+                body: JSON.stringify({
+                  number: contact.phone,
+                  text: personalizedMsg,
+                }),
+              });
+            }
 
             if (res.ok) {
               contact.consent_status = "PENDING";
@@ -1246,6 +1283,7 @@ export async function POST(req: NextRequest) {
           buy_link,
           price_label,
           message_template,
+          image_url,
         } = payload as {
           instance_name: string;
           contact_ids: string[];
@@ -1253,6 +1291,7 @@ export async function POST(req: NextRequest) {
           buy_link?: string;
           price_label?: string;
           message_template?: string;
+          image_url?: string;
         };
 
         const cleanInstName = (instance_name || "").trim();
@@ -1327,18 +1366,53 @@ export async function POST(req: NextRequest) {
             .replace(/\{link_catalogo\}/gi, defaultCatalog);
 
           try {
-            const sendUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
-            const res = await fetch(sendUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: salesInstance.api_key,
-              },
-              body: JSON.stringify({
-                number: contact.phone,
-                text: personalizedMsg,
-              }),
-            });
+            let res: Response;
+            if (image_url && typeof image_url === "string" && image_url.trim()) {
+              const sendMediaUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendMedia/${encodeURIComponent(salesInstance.name)}`;
+              res = await fetch(sendMediaUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: salesInstance.api_key,
+                },
+                body: JSON.stringify({
+                  number: contact.phone,
+                  mediatype: "image",
+                  mimetype: "image/jpeg",
+                  caption: personalizedMsg,
+                  media: image_url.trim(),
+                }),
+              });
+
+              // Fallback gracioso para texto se o envio de mídia falhar
+              if (!res.ok) {
+                const sendTextUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
+                res = await fetch(sendTextUrl, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    apikey: salesInstance.api_key,
+                  },
+                  body: JSON.stringify({
+                    number: contact.phone,
+                    text: personalizedMsg,
+                  }),
+                });
+              }
+            } else {
+              const sendUrl = `${cleanEvolutionUrl(salesInstance.server_url)}/message/sendText/${encodeURIComponent(salesInstance.name)}`;
+              res = await fetch(sendUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  apikey: salesInstance.api_key,
+                },
+                body: JSON.stringify({
+                  number: contact.phone,
+                  text: personalizedMsg,
+                }),
+              });
+            }
 
             if (res.ok) {
               contact.last_promo_sent_at = nowIso;

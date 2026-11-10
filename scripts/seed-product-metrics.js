@@ -81,3 +81,4 @@ db.products.slice(0, 3).forEach((p, idx) => {
     `#${idx + 1}: [${p.id}] ${p.title.slice(0, 45)}... | Clicks: ${p.clicks_count} | Vendas: ${p.sales_count} | Rating: ${p.rating}★`
   );
 });
+

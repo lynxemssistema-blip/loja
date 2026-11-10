@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Filter,
   Globe,
+  Image as ImageIcon,
   Instagram,
   Layers,
   Linkedin,
@@ -41,6 +42,7 @@ import {
   Server,
   Share2,
   Shield,
+  Smartphone,
   Sparkles,
   Tag,
   Trash2,
@@ -54,6 +56,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import WhatsAppPhonePreview from "./WhatsAppPhonePreview";
 
 interface Props {
   instances: EvolutionInstance[];
@@ -272,6 +275,9 @@ export default function EvolutionManager({
   const [campaignMessageTemplate, setCampaignMessageTemplate] = useState(
     'Olá, {nome}! Somos da Lynx. Conheça nossa loja oficial de produtos, sistemas e soluções: {link_catalogo}\n\nCaso não tenha interesse em receber nossas novidades e ofertas, basta responder "PARAR" a qualquer momento.'
   );
+  const [campaignImageUrl, setCampaignImageUrl] = useState(
+    "https://lynxems.com.br/assets/sinco-solidworks-plugin-showcase-DYu0yd57.jpg"
+  );
   const [campaignSending, setCampaignSending] = useState(false);
 
   // Campanha Promocional (Regra Estrita: Mínimo 25h pós-convite e sem PARAR)
@@ -280,10 +286,20 @@ export default function EvolutionManager({
   const [promoProductTitle, setPromoProductTitle] = useState("");
   const [promoBuyLink, setPromoBuyLink] = useState("");
   const [promoPriceLabel, setPromoPriceLabel] = useState("");
+  const [promoImageUrl, setPromoImageUrl] = useState("");
   const [promoMessageTemplate, setPromoMessageTemplate] = useState(
     'Olá, {nome}! Tudo bem?\n\nPassando para compartilhar uma oportunidade exclusiva da Lynx com você:\n🔥 *{produto}* ({preco})\n\nConfira todos os detalhes e aproveite no link direto:\n{link_venda}\n\nCaso não queira mais receber nossas ofertas, basta responder "PARAR" a qualquer momento.'
   );
   const [promoSending, setPromoSending] = useState(false);
+
+  // Simulador Dedicado de WhatsApp no Celular
+  const [showSimulatorModal, setShowSimulatorModal] = useState(false);
+  const [simulatorMode, setSimulatorMode] = useState<"CATALOG" | "PROMO" | "CUSTOM">("PROMO");
+  const [simulatorContact, setSimulatorContact] = useState<EvolutionContact | null>(null);
+  const [simulatorProduct, setSimulatorProduct] = useState<LynxProduct | null>(null);
+  const [simulatorImageUrl, setSimulatorImageUrl] = useState("");
+  const [simulatorCustomText, setSimulatorCustomText] = useState("");
+  const [simulatorCopied, setSimulatorCopied] = useState(false);
 
   const [updatingConsentId, setUpdatingConsentId] = useState<string | null>(null);
 
@@ -867,6 +883,7 @@ export default function EvolutionManager({
             contact_ids: targetContactIds,
             message_template: campaignMessageTemplate,
             catalog_url: campaignCatalogUrl,
+            image_url: campaignImageUrl.trim() || undefined,
           },
         }),
       });
@@ -951,6 +968,7 @@ export default function EvolutionManager({
             buy_link: promoBuyLink,
             price_label: promoPriceLabel || undefined,
             message_template: promoMessageTemplate,
+            image_url: promoImageUrl.trim() || undefined,
           },
         }),
       });
@@ -1243,6 +1261,25 @@ export default function EvolutionManager({
             >
               <Sparkles className="w-3.5 h-3.5" />
               Disparar Promoção (+25h)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!simulatorContact && filteredContacts.length > 0) {
+                  setSimulatorContact(filteredContacts[0]);
+                }
+                if (!simulatorProduct && products.length > 0) {
+                  setSimulatorProduct(products[0]);
+                  setSimulatorImageUrl(products[0].image_url || "");
+                }
+                setShowSimulatorModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-900/30 transition cursor-pointer"
+              title="Ver exatamente como a mensagem com imagem e texto vai aparecer na tela do celular do cliente"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-200" />
+              Simular no Celular (WhatsApp)
             </button>
 
             <button
@@ -2780,11 +2817,11 @@ export default function EvolutionManager({
 
       {/* MODAL 4: CAMPANHA DE APRESENTAÇÃO DO CATÁLOGO DE PRODUTOS */}
       {showCampaignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-6xl w-full p-5 sm:p-6 space-y-5 shadow-2xl my-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center shrink-0">
                   <Package className="w-5 h-5 text-purple-300" />
                 </div>
                 <div>
@@ -2795,14 +2832,14 @@ export default function EvolutionManager({
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Disparo de apresentação com link oficial da loja Lynx e gestão de consentimento (Opt-in / PARAR).
+                    Disparo com link oficial da loja Lynx, imagem e gestão de consentimento (Opt-in / PARAR).
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCampaignModal(false)}
-                className="text-xs text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2817,7 +2854,7 @@ export default function EvolutionManager({
                     Instância Autorizada Conectada: &quot;Vendas Lynx&quot;
                   </div>
                   <p className="text-[11px] text-emerald-200/90 mt-0.5">
-                    Os disparos serão realizados <strong>exclusivamente</strong> por esta instância dedicada. Todas as outras 10 instâncias de suporte/pessoais permanecem estritamente preservadas e somente-leitura.
+                    Os disparos serão realizados <strong>exclusivamente</strong> por esta instância dedicada. Todas as outras instâncias de suporte/pessoais permanecem estritamente preservadas.
                   </p>
                 </div>
               </div>
@@ -2829,126 +2866,214 @@ export default function EvolutionManager({
                     Instância &quot;Vendas Lynx&quot; Não Encontrada
                   </div>
                   <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                    Por rigorosa política de segurança e anti-spam, <strong>nenhuma das 10 instâncias de suporte/pessoais pode enviar mensagens</strong>. Apenas a instância dedicada chamada <strong>&quot;Vendas Lynx&quot;</strong> tem permissão de disparo.
+                    Por rigorosa política de segurança e anti-spam, <strong>nenhuma das outras instâncias pode enviar mensagens</strong>. Apenas a instância dedicada chamada <strong>&quot;Vendas Lynx&quot;</strong> tem permissão de disparo.
                   </p>
-                  <div className="text-[11px] font-semibold text-amber-300 bg-amber-900/30 p-2 rounded-lg border border-amber-800/50">
-                    👉 Cadastre a instância com o nome exato <code>Vendas Lynx</code> na aba &quot;Instâncias Cadastradas&quot; para habilitar os disparos desta campanha.
-                  </div>
                 </div>
               </div>
             )}
 
-            {/* RESUMO DOS CONTATOS ALVOS */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-0.5">
-                <span className="text-slate-400 text-[11px]">Contatos no Filtro Atual:</span>
-                <div className="text-xl font-bold font-mono text-white">
-                  {filteredContacts.length}
+            {/* GRID PRINCIPAL: FORMULÁRIO À ESQUERDA + CELULAR WHATSAPP À DIREITA */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* COLUNA ESQUERDA: CONFIGURAÇÕES E CAMPOS (7 COLUNAS) */}
+              <div className="lg:col-span-7 space-y-4 text-xs">
+                {/* RESUMO DOS CONTATOS ALVOS */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
+                    <span className="text-slate-400 text-[10px]">No Filtro:</span>
+                    <div className="text-base font-bold font-mono text-white">
+                      {filteredContacts.length}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-emerald-500/30 space-y-0.5">
+                    <span className="text-emerald-400 text-[10px] font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Aptos:
+                    </span>
+                    <div className="text-base font-bold font-mono text-emerald-300">
+                      {filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-rose-500/30 space-y-0.5">
+                    <span className="text-rose-400 text-[10px] font-semibold flex items-center gap-1">
+                      <Ban className="w-3 h-3" />
+                      Bloqueados:
+                    </span>
+                    <div className="text-base font-bold font-mono text-rose-300">
+                      {filteredContacts.filter((c) => getEffectiveConsent(c) === "OPTED_OUT").length}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-slate-950 p-3 rounded-xl border border-emerald-500/30 space-y-0.5">
-                <span className="text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Aptos para Envio:
-                </span>
-                <div className="text-xl font-bold font-mono text-emerald-300">
-                  {filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length}
-                </div>
-              </div>
-
-              <div className="bg-slate-950 p-3 rounded-xl border border-rose-500/30 space-y-0.5">
-                <span className="text-rose-400 text-[11px] font-semibold flex items-center gap-1">
-                  <Ban className="w-3.5 h-3.5" />
-                  Protegidos (Responderam PARAR):
-                </span>
-                <div className="text-xl font-bold font-mono text-rose-300">
-                  {filteredContacts.filter((c) => getEffectiveConsent(c) === "OPTED_OUT").length}
-                </div>
-                <div className="text-[10px] text-slate-500">Nunca receberão mensagens</div>
-              </div>
-            </div>
-
-            {/* REGRAS DE CONSENTIMENTO INTELIGENTE */}
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-2">
-              <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-sky-400" />
-                Regras Automatizadas de Consentimento (WhatsApp):
-              </div>
-              <ul className="space-y-1.5 text-[11px] text-slate-400 pl-4 list-disc">
-                <li>
-                  <strong className="text-white">⏱️ Aceite Tácito após 24 Horas:</strong> Clientes que não responderem <em>&quot;PARAR&quot;</em> nas primeiras 24 horas recebem consentimento automático e passam para a lista com permissão (Opt-in).
-                </li>
-                <li>
-                  <strong className="text-white">🚫 Bloqueio Imediato com &quot;PARAR&quot;:</strong> Se em qualquer momento o contato responder <em>&quot;PARAR&quot;</em>, <em>&quot;PARE&quot;</em> ou <em>&quot;SAIR&quot;</em>, o Webhook o descadastra imediatamente e o bloqueia para sempre.
-                </li>
-              </ul>
-            </div>
-
-            {/* CONFIGURAÇÃO DA MENSAGEM */}
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Link Direto da Loja Oficial *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    required
-                    value={campaignCatalogUrl}
-                    onChange={(e) => setCampaignCatalogUrl(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono"
-                    placeholder="https://loja.lynxems.com.br/loja"
-                  />
-                  <a
-                    href={campaignCatalogUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 inline-flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Abrir
-                  </a>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-300 font-medium">
-                    Modelo de Mensagem de Apresentação *
+                {/* LINK DA LOJA */}
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">
+                    Link Direto da Loja Oficial *
                   </label>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Tags: <code className="text-sky-300 font-bold">&#123;nome&#125;</code> | <code className="text-purple-300 font-bold">&#123;link_catalogo&#125;</code>
-                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      required
+                      value={campaignCatalogUrl}
+                      onChange={(e) => setCampaignCatalogUrl(e.target.value)}
+                      className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-purple-500 focus:outline-none"
+                      placeholder="https://loja.lynxems.com.br/loja"
+                    />
+                    <a
+                      href={campaignCatalogUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 inline-flex items-center gap-1 text-xs shrink-0"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Abrir
+                    </a>
+                  </div>
                 </div>
-                <textarea
-                  rows={4}
-                  required
-                  value={campaignMessageTemplate}
-                  onChange={(e) => setCampaignMessageTemplate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-purple-500 focus:outline-none"
-                />
+
+                {/* IMAGEM OPCIONAL DO CATÁLOGO */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-medium flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
+                      Foto / Banner da Mensagem (Opcional):
+                    </label>
+                    {campaignImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setCampaignImageUrl("")}
+                        className="text-[11px] text-rose-400 hover:underline"
+                      >
+                        Remover Foto
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="url"
+                      value={campaignImageUrl}
+                      onChange={(e) => setCampaignImageUrl(e.target.value)}
+                      placeholder="https://sua-imagem.com/foto.jpg"
+                      className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-purple-500 focus:outline-none"
+                    />
+                    {campaignImageUrl && (
+                      <div className="w-10 h-10 rounded-lg bg-black/50 overflow-hidden border border-slate-700 shrink-0">
+                        <img
+                          src={campaignImageUrl}
+                          alt="Miniatura"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Atalhos Rápidos de Imagem */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-slate-500">Sugestões rápidas:</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCampaignImageUrl(
+                          "https://lynxems.com.br/assets/sinco-solidworks-plugin-showcase-DYu0yd57.jpg"
+                        )
+                      }
+                      className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700"
+                    >
+                      Banner SINCO
+                    </button>
+                    {products.slice(0, 3).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setCampaignImageUrl(p.image_url || "")}
+                        className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 truncate max-w-[120px]"
+                      >
+                        {p.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* MODELO DE MENSAGEM */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-300 font-medium">
+                      Modelo de Mensagem de Apresentação *
+                    </label>
+                  </div>
+                  <textarea
+                    rows={5}
+                    required
+                    value={campaignMessageTemplate}
+                    onChange={(e) => setCampaignMessageTemplate(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-purple-500 focus:outline-none"
+                  />
+
+                  {/* Botões Rápidos de Inserção de Tags */}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span className="text-[10px] text-slate-500">Inserir tag:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCampaignMessageTemplate((prev) => prev + " {nome}")}
+                      className="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 text-[10px] font-mono hover:bg-sky-900"
+                    >
+                      + &#123;nome&#125;
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCampaignMessageTemplate((prev) => prev + " {link_catalogo}")}
+                      className="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-mono hover:bg-purple-900"
+                    >
+                      + &#123;link_catalogo&#125;
+                    </button>
+                  </div>
+                </div>
+
+                {/* REGRAS DE CONSENTIMENTO INTELIGENTE */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5 text-slate-400">
+                  <div className="font-semibold text-slate-300 flex items-center gap-1.5 text-[11px]">
+                    <Shield className="w-3.5 h-3.5 text-sky-400" />
+                    Regras Automatizadas de Consentimento (WhatsApp):
+                  </div>
+                  <p className="text-[10.5px] leading-relaxed">
+                    ⏱️ <strong>Aceite Tácito em 24h:</strong> Contatos que não responderem <em>&quot;PARAR&quot;</em> passam para a lista com permissão.<br />
+                    🚫 <strong>Bloqueio Imediato:</strong> Se responder <em>&quot;PARAR&quot;</em>, o Webhook bloqueia o envio permanentemente.
+                  </p>
+                </div>
               </div>
 
-              {/* PRÉVIA VISUAL DA MENSAGEM */}
-              <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">
-                  Prévia da Mensagem no WhatsApp:
-                </span>
-                <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/20 text-emerald-100 text-xs whitespace-pre-wrap leading-relaxed">
-                  {campaignMessageTemplate
-                    .replace(/\{nome\}/gi, filteredContacts[0]?.name || "Edson")
-                    .replace(/\{link_catalogo\}/gi, campaignCatalogUrl)}
+              {/* COLUNA DIREITA: SIMULADOR DE CELULAR WHATSAPP (5 COLUNAS) */}
+              <div className="lg:col-span-5 flex flex-col items-center bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="w-full text-center pb-1 border-b border-slate-800">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-bold">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Visualização no Celular do Cliente
+                  </div>
+                  <p className="text-[10.5px] text-slate-400 mt-1">
+                    Exatamente como a imagem e o texto chegam no WhatsApp do cliente
+                  </p>
                 </div>
+
+                {/* SMARTPHONE COMPONENT */}
+                <WhatsAppPhonePreview
+                  message={campaignMessageTemplate}
+                  imageUrl={campaignImageUrl}
+                  senderName="Vendas Lynx"
+                  selectedContact={filteredContacts[0] || null}
+                  contactsList={filteredContacts}
+                  catalogUrl={campaignCatalogUrl}
+                />
               </div>
             </div>
 
             {/* BOTÕES DE AÇÃO */}
-            <div className="pt-2 flex flex-wrap items-center justify-end gap-2 border-t border-slate-800">
+            <div className="pt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowCampaignModal(false)}
-                className="px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 text-xs"
+                className="px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 text-xs transition"
               >
                 Cancelar
               </button>
@@ -2961,7 +3086,7 @@ export default function EvolutionManager({
                   campaignSending ||
                   filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length === 0
                 }
-                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-900/30 inline-flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-purple-900/30 inline-flex items-center gap-2 cursor-pointer transition"
               >
                 <Send className={`w-4 h-4 ${campaignSending ? "animate-pulse" : ""}`} />
                 {campaignSending
@@ -2977,10 +3102,10 @@ export default function EvolutionManager({
         </div>
       )}
 
-      {/* ================= MODAL DISPARAR PROMOÇÃO (+25 HORAS) ================= */}
+      {/* ================= MODAL 5: DISPARAR PROMOÇÃO (+25 HORAS) COM SIMULADOR INTEGRADO ================= */}
       {showPromoModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 my-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-6xl w-full p-6 space-y-5 my-8 shadow-2xl">
             {/* CABEÇALHO */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
@@ -3002,239 +3127,301 @@ export default function EvolutionManager({
               <button
                 type="button"
                 onClick={() => setShowPromoModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* AVISO DE INSTÂNCIA VENDAS LYNX */}
-            {!salesInstance ? (
-              <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-3.5 text-xs text-rose-200 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="font-bold text-rose-300">
-                    Instância &quot;Vendas Lynx&quot; Não Encontrada
+            {/* GRID PRINCIPAL: 7 COLUNAS (FORMULÁRIO) + 5 COLUNAS (SMARTPHONE WHATSAPP) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* COLUNA ESQUERDA: CONFIGURAÇÕES E FORMULÁRIO */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* AVISO DE INSTÂNCIA VENDAS LYNX */}
+                {!salesInstance ? (
+                  <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-3.5 text-xs text-rose-200 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-bold text-rose-300">
+                        Instância &quot;Vendas Lynx&quot; Não Encontrada
+                      </div>
+                      <p className="text-[11px] text-rose-300/80 leading-relaxed">
+                        Por segurança de blindagem contra bloqueios, disparos de mensagens comerciais e promoções são restritos à instância dedicada <strong>&quot;Vendas Lynx&quot;</strong>.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-rose-300/80 leading-relaxed">
-                    Por segurança de blindagem contra bloqueios, disparos de mensagens comerciais e promoções são restritos à instância dedicada <strong>&quot;Vendas Lynx&quot;</strong>.
+                ) : (
+                  <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>
+                        Instância de Envio: <strong>&quot;{salesInstance.name}&quot;</strong> ({salesInstance.status === "open" ? "Conectada" : "Desconectada"})
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                      Canal Autorizado
+                    </span>
+                  </div>
+                )}
+
+                {/* REGRA DAS 25 HORAS - DESTAQUE */}
+                <div className="bg-amber-950/25 border border-amber-500/30 rounded-xl p-3.5 text-xs space-y-1.5">
+                  <div className="font-bold text-amber-300 flex items-center gap-1.5 text-[11px]">
+                    <Shield className="w-4 h-4 text-amber-400" />
+                    Regra Estrita de Compliance (25 Horas Pós-Convite):
+                  </div>
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    A mensagem promocional para qualquer cliente <strong>SÓ PODE SER ENVIADA COM NO MÍNIMO 25 HORAS</strong> decorridas após a mensagem de apresentação, e <strong>DESDE QUE NÃO TENHA RESPONDIDO &quot;PARAR&quot;</strong>.
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    Instância de Envio: <strong>&quot;{salesInstance.name}&quot;</strong> ({salesInstance.status === "open" ? "Conectada" : "Desconectada"})
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  Canal Autorizado
-                </span>
-              </div>
-            )}
 
-            {/* REGRA DAS 25 HORAS - DESTAQUE */}
-            <div className="bg-amber-950/25 border border-amber-500/30 rounded-xl p-3.5 text-xs space-y-2">
-              <div className="font-bold text-amber-300 flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-amber-400" />
-                Regra Estrita de Compliance (25 Horas Pós-Convite):
-              </div>
-              <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                A primeira mensagem promocional para qualquer cliente <strong>SÓ PODE SER ENVIADA COM NO MÍNIMO 25 HORAS</strong> decorridas após a mensagem de apresentação, e <strong>DESDE QUE NÃO TENHA RESPONDIDO &quot;PARAR&quot;</strong>. Contatos com menos de 25 horas ficam retidos em carência de segurança.
-              </p>
-            </div>
+                {/* SELEÇÃO DO PRODUTO */}
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-sky-400" />
+                      Selecione o Produto ou Oferta do Catálogo:
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {products.length} produto(s) cadastrado(s)
+                    </span>
+                  </div>
 
-            {/* SELEÇÃO DO PRODUTO */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <label className="text-slate-300 font-semibold flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5 text-sky-400" />
-                  Selecione o Produto ou Oferta do Catálogo:
-                </label>
-                <span className="text-[10px] text-slate-500">
-                  {products.length} produto(s) cadastrado(s)
-                </span>
-              </div>
-
-              {products.length > 0 ? (
-                <select
-                  value={selectedPromoProductId}
-                  onChange={(e) => {
-                    const pid = e.target.value;
-                    setSelectedPromoProductId(pid);
-                    const prod = products.find((p) => p.id === pid);
-                    if (prod) {
-                      setPromoProductTitle(prod.title);
-                      setPromoBuyLink(prod.buy_link);
-                      setPromoPriceLabel(prod.price_label || "");
-                    }
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="">-- Escolher um produto cadastrado (ou preencher avulso) --</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} ({p.price_label || "R$ " + p.price})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="text-[11px] text-slate-400 italic">
-                  Nenhum produto cadastrado no momento. Você pode preencher os campos abaixo manualmente.
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-slate-400 text-[11px] mb-1">
-                    Nome da Oferta / Produto *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={promoProductTitle}
-                    onChange={(e) => setPromoProductTitle(e.target.value)}
-                    placeholder="Ex: Sistema Evolution API"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 text-[11px] mb-1">
-                    Preço de Exibição / Condição
-                  </label>
-                  <input
-                    type="text"
-                    value={promoPriceLabel}
-                    onChange={(e) => setPromoPriceLabel(e.target.value)}
-                    placeholder="Ex: R$ 97,00 ou 50% OFF"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 text-[11px] mb-1">
-                  Link Direto de Venda / Checkout *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    required
-                    value={promoBuyLink}
-                    onChange={(e) => setPromoBuyLink(e.target.value)}
-                    placeholder="https://pay.kiwify.com.br/... ou https://wa.me/..."
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs"
-                  />
-                  {promoBuyLink && (
-                    <a
-                      href={promoBuyLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 inline-flex items-center gap-1 text-xs shrink-0"
+                  {products.length > 0 ? (
+                    <select
+                      value={selectedPromoProductId}
+                      onChange={(e) => {
+                        const pid = e.target.value;
+                        setSelectedPromoProductId(pid);
+                        const prod = products.find((p) => p.id === pid);
+                        if (prod) {
+                          setPromoProductTitle(prod.title);
+                          setPromoBuyLink(prod.buy_link);
+                          setPromoPriceLabel(prod.price_label || (prod.price ? `R$ ${prod.price}` : ""));
+                          setPromoImageUrl(prod.image_url || "");
+                        }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      Testar
-                    </a>
+                      <option value="">-- Escolher um produto cadastrado (ou preencher avulso) --</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.title} ({p.price_label || "R$ " + p.price})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic">
+                      Nenhum produto cadastrado no momento. Você pode preencher os campos abaixo manualmente.
+                    </div>
                   )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Nome da Oferta / Produto *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={promoProductTitle}
+                        onChange={(e) => setPromoProductTitle(e.target.value)}
+                        placeholder="Ex: Sistema Evolution API"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Preço de Exibição / Condição
+                      </label>
+                      <input
+                        type="text"
+                        value={promoPriceLabel}
+                        onChange={(e) => setPromoPriceLabel(e.target.value)}
+                        placeholder="Ex: R$ 97,00 ou 50% OFF"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 text-[11px] mb-1">
+                      Link Direto de Venda / Checkout *
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        required
+                        value={promoBuyLink}
+                        onChange={(e) => setPromoBuyLink(e.target.value)}
+                        placeholder="https://pay.kiwify.com.br/... ou https://loja.lynxems.com.br/loja"
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs"
+                      />
+                      {promoBuyLink && (
+                        <a
+                          href={promoBuyLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 inline-flex items-center gap-1 text-xs shrink-0"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Testar
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* URL DA IMAGEM DA OFERTA (WHATSAPP COM LEGENDA) */}
+                  <div>
+                    <label className="block text-slate-400 text-[11px] mb-1">
+                      URL da Imagem da Oferta (Enviada com a legenda no WhatsApp):
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="url"
+                          value={promoImageUrl}
+                          onChange={(e) => setPromoImageUrl(e.target.value)}
+                          placeholder="https://... (Foto do produto, banner ou capa do ebook)"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none"
+                        />
+                        <ImageIcon className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                      </div>
+                      {promoImageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setPromoImageUrl("")}
+                          className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs shrink-0"
+                          title="Remover imagem"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    {promoImageUrl && (
+                      <div className="mt-2 flex items-center gap-3 p-2 bg-slate-900/80 rounded-lg border border-slate-800">
+                        <img
+                          src={promoImageUrl}
+                          alt="Prévia da Imagem"
+                          className="w-12 h-12 object-contain bg-slate-950 rounded border border-slate-700 shrink-0"
+                          onError={(e) => ((e.target as HTMLElement).style.display = "none")}
+                        />
+                        <div className="text-[11px] text-slate-300 truncate">
+                          <span className="font-semibold text-emerald-400">Imagem ativa:</span> {promoImageUrl}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* AUDITORIA DOS CONTATOS FILTRADOS */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                    <span className="text-slate-400 text-[10px]">No Filtro:</span>
+                    <div className="text-lg font-bold font-mono text-white">
+                      {filteredContacts.length}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-emerald-500/30">
+                    <span className="text-emerald-400 text-[10px] font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      Aptos (+25h):
+                    </span>
+                    <div className="text-lg font-bold font-mono text-emerald-300">
+                      {filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30">
+                    <span className="text-amber-400 text-[10px] font-semibold flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Carência (&lt;25h):
+                    </span>
+                    <div className="text-lg font-bold font-mono text-amber-300">
+                      {
+                        filteredContacts.filter(
+                          (c) => checkPromotionEligibility(c).status === "COOLING_OFF"
+                        ).length
+                      }
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-2.5 rounded-xl border border-rose-500/30">
+                    <span className="text-rose-400 text-[10px] font-semibold flex items-center gap-1">
+                      <Ban className="w-3 h-3" />
+                      Bloqueados:
+                    </span>
+                    <div className="text-lg font-bold font-mono text-rose-300">
+                      {
+                        filteredContacts.filter(
+                          (c) => checkPromotionEligibility(c).status === "OPTED_OUT"
+                        ).length
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {/* TEMPLATE DA MENSAGEM */}
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-300 font-medium">
+                      Modelo de Mensagem de Promoção *
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Tags: <code className="text-sky-300">&#123;nome&#125;</code> |{" "}
+                      <code className="text-amber-300">&#123;produto&#125;</code> |{" "}
+                      <code className="text-emerald-300">&#123;preco&#125;</code> |{" "}
+                      <code className="text-purple-300">&#123;link_venda&#125;</code>
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    required
+                    value={promoMessageTemplate}
+                    onChange={(e) => setPromoMessageTemplate(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-emerald-500 focus:outline-none"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* AUDITORIA DOS CONTATOS FILTRADOS */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-[10px]">No Filtro:</span>
-                <div className="text-lg font-bold font-mono text-white">
-                  {filteredContacts.length}
+              {/* COLUNA DIREITA: SIMULADOR DE CELULAR WHATSAPP (5 COLUNAS) */}
+              <div className="lg:col-span-5 flex flex-col items-center bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="w-full text-center pb-1 border-b border-slate-800">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-bold">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Visualização no Celular do Cliente
+                  </div>
+                  <p className="text-[10.5px] text-slate-400 mt-1">
+                    Exatamente como a imagem e o texto chegam no WhatsApp do cliente
+                  </p>
                 </div>
-              </div>
 
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-emerald-500/30">
-                <span className="text-emerald-400 text-[10px] font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Aptos (+25h):
-                </span>
-                <div className="text-lg font-bold font-mono text-emerald-300">
-                  {filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length}
-                </div>
-              </div>
-
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30">
-                <span className="text-amber-400 text-[10px] font-semibold flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Carência (&lt;25h):
-                </span>
-                <div className="text-lg font-bold font-mono text-amber-300">
-                  {
-                    filteredContacts.filter(
-                      (c) => checkPromotionEligibility(c).status === "COOLING_OFF"
-                    ).length
+                {/* SMARTPHONE COMPONENT */}
+                <WhatsAppPhonePreview
+                  message={promoMessageTemplate}
+                  imageUrl={promoImageUrl}
+                  senderName="Vendas Lynx"
+                  selectedContact={
+                    filteredContacts.find((c) => checkPromotionEligibility(c).allowed) ||
+                    filteredContacts[0] ||
+                    null
                   }
-                </div>
-              </div>
-
-              <div className="bg-slate-950 p-2.5 rounded-xl border border-rose-500/30">
-                <span className="text-rose-400 text-[10px] font-semibold flex items-center gap-1">
-                  <Ban className="w-3 h-3" />
-                  Bloqueados:
-                </span>
-                <div className="text-lg font-bold font-mono text-rose-300">
-                  {
-                    filteredContacts.filter(
-                      (c) => checkPromotionEligibility(c).status === "OPTED_OUT"
-                    ).length
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* TEMPLATE DA MENSAGEM */}
-            <div className="space-y-3 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-slate-300 font-medium">
-                    Modelo de Mensagem de Promoção *
-                  </label>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Tags: <code className="text-sky-300">&#123;nome&#125;</code> |{" "}
-                    <code className="text-amber-300">&#123;produto&#125;</code> |{" "}
-                    <code className="text-emerald-300">&#123;preco&#125;</code> |{" "}
-                    <code className="text-purple-300">&#123;link_venda&#125;</code>
-                  </span>
-                </div>
-                <textarea
-                  rows={4}
-                  required
-                  value={promoMessageTemplate}
-                  onChange={(e) => setPromoMessageTemplate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-emerald-500 focus:outline-none"
+                  contactsList={filteredContacts}
+                  productTitle={promoProductTitle || "Produto da Coleção Lynx"}
+                  productPrice={promoPriceLabel || "R$ 97,00"}
+                  buyLink={promoBuyLink || "https://loja.lynxems.com.br/loja"}
                 />
-              </div>
-
-              {/* PRÉVIA VISUAL NO WHATSAPP */}
-              <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">
-                  Prévia da Mensagem no WhatsApp:
-                </span>
-                <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/20 text-emerald-100 text-xs whitespace-pre-wrap leading-relaxed">
-                  {promoMessageTemplate
-                    .replace(/\{nome\}/gi, filteredContacts[0]?.name || "Edson")
-                    .replace(/\{produto\}/gi, promoProductTitle || "Sistema Evolution API")
-                    .replace(/\{preco\}/gi, promoPriceLabel || "R$ 97,00")
-                    .replace(/\{link_venda\}/gi, promoBuyLink || "https://pay.kiwify.com.br/...")}
-                </div>
               </div>
             </div>
 
             {/* BOTÕES DE AÇÃO */}
-            <div className="pt-2 flex flex-wrap items-center justify-end gap-2 border-t border-slate-800">
+            <div className="pt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowPromoModal(false)}
-                className="px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 text-xs"
+                className="px-4 py-2 rounded-lg text-slate-400 hover:bg-slate-800 text-xs transition"
               >
                 Cancelar
               </button>
@@ -3249,7 +3436,7 @@ export default function EvolutionManager({
                   !promoBuyLink.trim() ||
                   filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length === 0
                 }
-                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 inline-flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-900/30 inline-flex items-center gap-2 cursor-pointer transition"
               >
                 <Sparkles className={`w-4 h-4 ${promoSending ? "animate-spin" : ""}`} />
                 {promoSending
@@ -3261,6 +3448,431 @@ export default function EvolutionManager({
                   : `Disparar Oferta para ${
                       filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length
                     } Contato(s) Elegíveis (+25h)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 6: SIMULADOR DEDICADO DE WHATSAPP NO SMARTPHONE ================= */}
+      {showSimulatorModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-6xl w-full p-6 space-y-5 my-8 shadow-2xl">
+            {/* CABEÇALHO DO SIMULADOR */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                  <Smartphone className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Simulador Oficial de WhatsApp Lynx
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Live Preview
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Veja em tempo real a reprodução exata da tela do celular do cliente com imagem, legenda e botões.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSimulatorModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* GRID DO SIMULADOR: CONTROLES À ESQUERDA (7) + SMARTPHONE À DIREITA (5) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* CONTROLES À ESQUERDA */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* SELETOR DE MODO DO SIMULADOR */}
+                <div>
+                  <label className="block text-slate-400 text-xs font-semibold mb-2">
+                    Modo da Mensagem:
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSimulatorMode("PROMO")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
+                        simulatorMode === "PROMO"
+                          ? "bg-amber-500/15 border-amber-500/50 text-amber-300 shadow-md shadow-amber-950/40"
+                          : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      Oferta de Produto
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSimulatorMode("CATALOG")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
+                        simulatorMode === "CATALOG"
+                          ? "bg-purple-500/15 border-purple-500/50 text-purple-300 shadow-md shadow-purple-950/40"
+                          : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Package className="w-4 h-4 text-purple-400" />
+                      Catálogo da Loja
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSimulatorMode("CUSTOM")}
+                      className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition cursor-pointer ${
+                        simulatorMode === "CUSTOM"
+                          ? "bg-sky-500/15 border-sky-500/50 text-sky-300 shadow-md shadow-sky-950/40"
+                          : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <MessageSquare className="w-4 h-4 text-sky-400" />
+                      Mensagem Livre
+                    </button>
+                  </div>
+                </div>
+
+                {/* SELEÇÃO DO CONTATO PARA INTERPOLAÇÃO DE NOME */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-emerald-400" />
+                      Contato Destinatário de Teste:
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      Substitui &#123;nome&#125; no preview
+                    </span>
+                  </div>
+                  <select
+                    value={simulatorContact?.id || ""}
+                    onChange={(e) => {
+                      const found = filteredContacts.find((c) => c.id === e.target.value);
+                      if (found) setSimulatorContact(found);
+                    }}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                  >
+                    {filteredContacts.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name || "Sem Nome"} — {c.phone} {c.company ? `(${c.company})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* PAINEL DINÂMICO CONFORME O MODO */}
+                {simulatorMode === "PROMO" && (
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-300 font-semibold mb-1">
+                        Escolha o Produto para a Simulação:
+                      </label>
+                      <select
+                        value={simulatorProduct?.id || ""}
+                        onChange={(e) => {
+                          const p = products.find((x) => x.id === e.target.value);
+                          if (p) {
+                            setSimulatorProduct(p);
+                            if (p.image_url) setSimulatorImageUrl(p.image_url);
+                          }
+                        }}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                      >
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.title} ({p.price_label || "R$ " + p.price})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Imagem da Oferta (WhatsApp):
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="url"
+                            value={simulatorImageUrl}
+                            onChange={(e) => setSimulatorImageUrl(e.target.value)}
+                            placeholder="https://... URL da imagem"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-white font-mono text-xs focus:border-emerald-500 focus:outline-none"
+                          />
+                          <ImageIcon className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                        </div>
+                        {simulatorImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setSimulatorImageUrl("")}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs shrink-0 cursor-pointer"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Texto da Mensagem (com tags):
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={promoMessageTemplate}
+                        onChange={(e) => setPromoMessageTemplate(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {simulatorMode === "CATALOG" && (
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Imagem de Capa do Catálogo:
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="url"
+                            value={campaignImageUrl}
+                            onChange={(e) => setCampaignImageUrl(e.target.value)}
+                            placeholder="https://... Imagem institucional ou foto da vitrine"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-white font-mono text-xs focus:border-purple-500 focus:outline-none"
+                          />
+                          <ImageIcon className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                        </div>
+                        {campaignImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setCampaignImageUrl("")}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs shrink-0 cursor-pointer"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Link do Catálogo / Loja:
+                      </label>
+                      <input
+                        type="url"
+                        value={campaignCatalogUrl}
+                        onChange={(e) => setCampaignCatalogUrl(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Texto da Mensagem de Apresentação:
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={campaignMessageTemplate}
+                        onChange={(e) => setCampaignMessageTemplate(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {simulatorMode === "CUSTOM" && (
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Imagem Opcional (URL):
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="url"
+                            value={simulatorImageUrl}
+                            onChange={(e) => setSimulatorImageUrl(e.target.value)}
+                            placeholder="https://... URL da imagem (opcional)"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-white font-mono text-xs focus:border-sky-500 focus:outline-none"
+                          />
+                          <ImageIcon className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                        </div>
+                        {simulatorImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setSimulatorImageUrl("")}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 text-xs shrink-0 cursor-pointer"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 text-[11px] mb-1">
+                        Texto Livre da Mensagem (suporta *negrito*, _itálico_, links):
+                      </label>
+                      <textarea
+                        rows={5}
+                        value={simulatorCustomText}
+                        onChange={(e) => setSimulatorCustomText(e.target.value)}
+                        placeholder="Olá, {nome}! Digite aqui sua mensagem..."
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white text-xs font-sans leading-relaxed focus:border-sky-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* DICAS DE FORMATAÇÃO WHATSAPP */}
+                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                  <div className="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Formatação oficial do WhatsApp:
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[10.5px]">
+                    <div><code>*texto em negrito*</code></div>
+                    <div><code>_texto em itálico_</code></div>
+                    <div><code>~texto tachado~</code></div>
+                    <div><code>```código monoespaçado```</code></div>
+                  </div>
+                </div>
+
+                {/* BOTÕES DE AÇÕES RÁPIDAS */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const targetContact = simulatorContact || filteredContacts[0];
+                      let textToCopy = "";
+                      if (simulatorMode === "PROMO") {
+                        textToCopy = promoMessageTemplate
+                          .replace(/\{nome\}/gi, targetContact?.name || "Cliente")
+                          .replace(/\{produto\}/gi, simulatorProduct?.title || promoProductTitle || "Produto")
+                          .replace(/\{preco\}/gi, simulatorProduct?.price_label || promoPriceLabel || "R$ 97,00")
+                          .replace(/\{link_venda\}/gi, simulatorProduct?.buy_link || promoBuyLink || "https://loja.lynxems.com.br/loja");
+                      } else if (simulatorMode === "CATALOG") {
+                        textToCopy = campaignMessageTemplate
+                          .replace(/\{nome\}/gi, targetContact?.name || "Cliente")
+                          .replace(/\{link_catalogo\}/gi, campaignCatalogUrl);
+                      } else {
+                        textToCopy = (simulatorCustomText || "")
+                          .replace(/\{nome\}/gi, targetContact?.name || "Cliente");
+                      }
+
+                      navigator.clipboard.writeText(textToCopy);
+                      setSimulatorCopied(true);
+                      setTimeout(() => setSimulatorCopied(false), 2500);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+                  >
+                    {simulatorCopied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        Texto Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-sky-400" />
+                        Copiar Mensagem Pronta
+                      </>
+                    )}
+                  </button>
+
+                  {simulatorContact?.phone && (
+                    <a
+                      href={`https://wa.me/${simulatorContact.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                        (simulatorMode === "PROMO"
+                          ? promoMessageTemplate
+                              .replace(/\{nome\}/gi, simulatorContact.name || "Cliente")
+                              .replace(/\{produto\}/gi, simulatorProduct?.title || promoProductTitle || "Produto")
+                              .replace(/\{preco\}/gi, simulatorProduct?.price_label || promoPriceLabel || "R$ 97,00")
+                              .replace(/\{link_venda\}/gi, simulatorProduct?.buy_link || promoBuyLink || "https://loja.lynxems.com.br/loja")
+                          : simulatorMode === "CATALOG"
+                          ? campaignMessageTemplate
+                              .replace(/\{nome\}/gi, simulatorContact.name || "Cliente")
+                              .replace(/\{link_catalogo\}/gi, campaignCatalogUrl)
+                          : simulatorCustomText.replace(/\{nome\}/gi, simulatorContact.name || "Cliente")
+                        )
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+                      Testar no WhatsApp Web ({simulatorContact.phone})
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSimulatorModal(false);
+                      if (simulatorMode === "CATALOG") {
+                        setShowCampaignModal(true);
+                      } else {
+                        setShowPromoModal(true);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition ml-auto cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Ir para Disparo Oficial
+                  </button>
+                </div>
+              </div>
+
+              {/* COLUNA DIREITA: SMARTPHONE COM VISUALIZAÇÃO REALISTA */}
+              <div className="lg:col-span-5 flex flex-col items-center bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="w-full text-center pb-1 border-b border-slate-800">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-bold">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Visualização no Smartphone
+                  </div>
+                  <p className="text-[10.5px] text-slate-400 mt-1">
+                    Exatamente como a imagem e o texto chegam no WhatsApp do cliente
+                  </p>
+                </div>
+
+                <WhatsAppPhonePreview
+                  message={
+                    simulatorMode === "PROMO"
+                      ? promoMessageTemplate
+                      : simulatorMode === "CATALOG"
+                      ? campaignMessageTemplate
+                      : simulatorCustomText || "Olá, {nome}! Esta é uma prévia do WhatsApp com a Lynx."
+                  }
+                  imageUrl={
+                    simulatorMode === "PROMO"
+                      ? simulatorImageUrl || simulatorProduct?.image_url || ""
+                      : simulatorMode === "CATALOG"
+                      ? campaignImageUrl
+                      : simulatorImageUrl
+                  }
+                  senderName="Vendas Lynx"
+                  selectedContact={simulatorContact || filteredContacts[0] || null}
+                  contactsList={filteredContacts}
+                  productTitle={simulatorProduct?.title || promoProductTitle || "Produto Selecionado"}
+                  productPrice={simulatorProduct?.price_label || promoPriceLabel || "R$ 97,00"}
+                  buyLink={simulatorProduct?.buy_link || promoBuyLink || "https://loja.lynxems.com.br/loja"}
+                  catalogUrl={campaignCatalogUrl}
+                />
+              </div>
+            </div>
+
+            {/* RODAPÉ DO MODAL */}
+            <div className="pt-3 flex items-center justify-end border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowSimulatorModal(false)}
+                className="px-5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
+              >
+                Fechar Simulador
               </button>
             </div>
           </div>
