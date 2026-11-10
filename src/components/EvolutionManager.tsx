@@ -1066,6 +1066,25 @@ export default function EvolutionManager({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => {
+              if (!simulatorContact && filteredContacts.length > 0) {
+                setSimulatorContact(filteredContacts[0]);
+              }
+              if (!simulatorProduct && products.length > 0) {
+                setSimulatorProduct(products[0]);
+                setSimulatorImageUrl(products[0].image_url || "");
+              }
+              setShowSimulatorModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-300 text-slate-950 shadow-lg shadow-emerald-500/30 transition cursor-pointer ring-2 ring-emerald-400/50 hover:scale-105"
+            title="Ver exatamente como a mensagem com imagem e texto vai aparecer na tela do celular do cliente"
+          >
+            <Smartphone className="w-4 h-4 text-slate-950" />
+            📱 Simular no Celular (WhatsApp)
+          </button>
+
+          <button
+            type="button"
             onClick={handleSyncAllContacts}
             disabled={syncing || instances.length === 0}
             className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"

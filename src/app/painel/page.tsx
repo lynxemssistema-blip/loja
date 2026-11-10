@@ -34,6 +34,7 @@ import {
   Shield,
   ShieldCheck,
   Sliders,
+  Smartphone,
   Trash2,
   UserCheck,
   UserPlus,
@@ -718,14 +719,14 @@ export default function ParceiroLynxApp() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("EVOLUTION")}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition ${
                     activeTab === "EVOLUTION"
-                      ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/20"
                       : "text-slate-400 hover:text-white hover:bg-slate-900"
                   }`}
                 >
-                  <MessageSquare className="w-4 h-4 text-emerald-400" />
-                  WhatsApp & Leads Evolution ({state.evolution_contacts?.length || 0})
+                  <Smartphone className="w-4 h-4 text-emerald-400" />
+                  <span>WhatsApp &amp; Simulador no Celular ({state.evolution_contacts?.length || 0})</span>
                 </button>
 
                 <button
