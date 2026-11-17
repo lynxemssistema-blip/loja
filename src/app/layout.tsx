@@ -5,6 +5,14 @@ export const metadata: Metadata = {
   title: "Parceiro Lynx | Painel Gerencial Asaas & Split de Parceiros",
   description:
     "Painel de transparência financeira total por Grupo de Clientes Asaas, apuração de impostos, custos operacionais e divisão líquida (Split Payment) para parceiros.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
