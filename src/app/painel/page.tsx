@@ -334,7 +334,13 @@ export default function ParceiroLynxApp() {
         if (!cfgAsaasKey) setActiveTab("SETTINGS");
         return;
       }
-      setState(data.state);
+      setState((prev) => {
+        if (!prev) return data.state;
+        return {
+          ...data.state,
+          evolution_contacts: data.state?.evolution_contacts || prev.evolution_contacts || [],
+        };
+      });
       notify(
         "success",
         `Sincronização concluída! ${data.importedCount} cobranças e ${data.groupsCount} grupos atualizados do Asaas.`

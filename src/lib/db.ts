@@ -444,7 +444,8 @@ export async function loadStateWithSupabase(): Promise<{
  * Sincroniza o estado para o Supabase da VPS caso esteja configurado
  */
 export async function syncStateToSupabaseIfConfigured(
-  state: LynxDatabaseState
+  state: LynxDatabaseState,
+  options?: { skipContacts?: boolean }
 ): Promise<{ synced: boolean; error?: string }> {
   const sb = getSupabaseServerClient();
   if (!sb) {
@@ -538,7 +539,7 @@ export async function syncStateToSupabaseIfConfigured(
         .upsert(state.evolution_instances);
     }
 
-    if (state.evolution_contacts && state.evolution_contacts.length > 0) {
+    if (!options?.skipContacts && state.evolution_contacts && state.evolution_contacts.length > 0) {
       // Upsert em lotes de 500 para evitar limitação de payload no PostgREST
       const BATCH_SIZE = 500;
       for (let i = 0; i < state.evolution_contacts.length; i += BATCH_SIZE) {

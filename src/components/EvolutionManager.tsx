@@ -45,6 +45,7 @@ import {
   Smartphone,
   Sparkles,
   Tag,
+  Target,
   Trash2,
   Upload,
   User,
@@ -303,10 +304,41 @@ export default function EvolutionManager({
 
   const [updatingConsentId, setUpdatingConsentId] = useState<string | null>(null);
 
-  // Instância de disparo dedicada ("Vendas Lynx")
-  const salesInstance = useMemo(() => {
-    return instances.find((i) => i.name.trim().toLowerCase() === "vendas lynx");
-  }, [instances]);
+  // Instância remetente selecionada manualmente para campanhas
+  const [senderInstanceName, setSenderInstanceName] = useState<string>("");
+
+  // Instância remetente ativa para disparos de WhatsApp:
+  // 1. Se escolhida manualmente no modal, usa a escolhida;
+  // 2. Se há uma instância filtrada (diferente de "ALL"), usa a instância filtrada como padrão;
+  // 3. Fallback para "Vendas Lynx", ou primeira conectada ("open"), ou primeira cadastrada.
+  const activeSenderInstance = useMemo(() => {
+    if (senderInstanceName) {
+      const found = instances.find((i) => i.name === senderInstanceName);
+      if (found) return found;
+    }
+    if (selectedInstanceFilter !== "ALL") {
+      const found = instances.find((i) => i.name === selectedInstanceFilter);
+      if (found) return found;
+    }
+    const sales = instances.find((i) => i.name.trim().toLowerCase() === "vendas lynx");
+    if (sales) return sales;
+    const firstOpen = instances.find((i) => i.status === "open");
+    if (firstOpen) return firstOpen;
+    return instances[0] || null;
+  }, [instances, senderInstanceName, selectedInstanceFilter]);
+
+  // Mantido para compatibilidade
+  const salesInstance = activeSenderInstance;
+
+  // Base de contatos com escopo isolado pela instância selecionada:
+  // Se uma instância estiver selecionada (ex: "DeMattos"), TODAS as contagens, métricas e listagens
+  // refletem exclusivamente os contatos que pertencem àquela instância.
+  const baseScopedContacts = useMemo(() => {
+    if (selectedInstanceFilter === "ALL") return contacts;
+    return contacts.filter(
+      (c) => Array.isArray(c.instances) && c.instances.includes(selectedInstanceFilter)
+    );
+  }, [contacts, selectedInstanceFilter]);
 
   // Loading states
   const [syncing, setSyncing] = useState(false);
@@ -342,18 +374,18 @@ export default function EvolutionManager({
   const [discoverKey, setDiscoverKey] = useState("");
   const [discovering, setDiscovering] = useState(false);
 
-  // Lista dinâmica de DDDs disponíveis nos contatos atuais
+  // Lista dinâmica de DDDs disponíveis nos contatos do escopo atual
   const availableDdds = useMemo(() => {
     const setDdd = new Set<string>();
-    for (const c of contacts) {
+    for (const c of baseScopedContacts) {
       if (c.ddd) setDdd.add(c.ddd);
     }
     return Array.from(setDdd).sort();
-  }, [contacts]);
+  }, [baseScopedContacts]);
 
   // Contatos Filtrados por Categoria + Filtros Secundários
   const filteredContacts = useMemo(() => {
-    return contacts.filter((c) => {
+    return baseScopedContacts.filter((c) => {
       // 1. Categoria Principal
       if (category === "UNIQUE" && c.is_repeated) return false; // Repetidos ficam fora da lista de itens únicos!
       if (category === "REPEATED" && !c.is_repeated) return false;
@@ -430,7 +462,7 @@ export default function EvolutionManager({
       return true;
     });
   }, [
-    contacts,
+    baseScopedContacts,
     category,
     consentFilter,
     selectedDdd,
@@ -449,23 +481,23 @@ export default function EvolutionManager({
     return {
       totalInstances: instances.length,
       connectedInstances: instances.filter((i) => i.status === "open").length,
-      totalContacts: contacts.length,
-      unique: contacts.filter((c) => !c.is_repeated).length,
-      repeated: contacts.filter((c) => c.is_repeated).length,
-      groups: contacts.filter((c) => c.source_type === "GROUP_MEMBER").length,
-      national: contacts.filter((c) => c.is_national).length,
-      international: contacts.filter((c) => !c.is_national).length,
-      validNames: contacts.filter((c) => c.has_valid_name).length,
-      withEmail: contacts.filter((c) => Boolean(c.email)).length,
-      withJobOrCompany: contacts.filter((c) => Boolean(c.job_title || c.company)).length,
-      optInCount: contacts.filter((c) => getEffectiveConsent(c) === "OPTED_IN").length,
-      pendingCount: contacts.filter((c) => getEffectiveConsent(c) === "PENDING").length,
-      optOutCount: contacts.filter((c) => getEffectiveConsent(c) === "OPTED_OUT").length,
-      notContactedCount: contacts.filter((c) => getEffectiveConsent(c) === "NOT_CONTACTED").length,
-      eligibleForPromoCount: contacts.filter((c) => checkPromotionEligibility(c).allowed).length,
-      coolingOffPromoCount: contacts.filter((c) => checkPromotionEligibility(c).status === "COOLING_OFF").length,
+      totalContacts: baseScopedContacts.length,
+      unique: baseScopedContacts.filter((c) => !c.is_repeated).length,
+      repeated: baseScopedContacts.filter((c) => c.is_repeated).length,
+      groups: baseScopedContacts.filter((c) => c.source_type === "GROUP_MEMBER").length,
+      national: baseScopedContacts.filter((c) => c.is_national).length,
+      international: baseScopedContacts.filter((c) => !c.is_national).length,
+      validNames: baseScopedContacts.filter((c) => c.has_valid_name).length,
+      withEmail: baseScopedContacts.filter((c) => Boolean(c.email)).length,
+      withJobOrCompany: baseScopedContacts.filter((c) => Boolean(c.job_title || c.company)).length,
+      optInCount: baseScopedContacts.filter((c) => getEffectiveConsent(c) === "OPTED_IN").length,
+      pendingCount: baseScopedContacts.filter((c) => getEffectiveConsent(c) === "PENDING").length,
+      optOutCount: baseScopedContacts.filter((c) => getEffectiveConsent(c) === "OPTED_OUT").length,
+      notContactedCount: baseScopedContacts.filter((c) => getEffectiveConsent(c) === "NOT_CONTACTED").length,
+      eligibleForPromoCount: baseScopedContacts.filter((c) => checkPromotionEligibility(c).allowed).length,
+      coolingOffPromoCount: baseScopedContacts.filter((c) => checkPromotionEligibility(c).status === "COOLING_OFF").length,
     };
-  }, [instances, contacts]);
+  }, [instances, baseScopedContacts]);
 
   // 1. Salvar Instância Individual
   const handleSaveSingle = async (e: React.FormEvent) => {
@@ -837,15 +869,12 @@ export default function EvolutionManager({
 
   // Disparo de Campanha de Apresentação de Catálogo
   const handleLaunchCampaign = async () => {
-    // 1. Validação estrita da instância "Vendas Lynx"
-    const targetInst = instances.find(
-      (i) => i.name.trim().toLowerCase() === "vendas lynx"
-    );
+    const targetInst = activeSenderInstance;
 
     if (!targetInst) {
       notify(
         "error",
-        "Ação Bloqueada: A instância dedicada 'Vendas Lynx' ainda não está cadastrada. Cadastre-a para habilitar disparos."
+        "Ação Bloqueada: Nenhuma instância selecionada ou disponível para envio. Conecte ou cadastre uma instância."
       );
       return;
     }
@@ -863,9 +892,14 @@ export default function EvolutionManager({
       return;
     }
 
+    const scopeDesc =
+      selectedInstanceFilter !== "ALL"
+        ? `somente da instância "${selectedInstanceFilter}"`
+        : "filtrados";
+
     if (
       !confirm(
-        `Deseja iniciar o envio do catálogo para ${targetContactIds.length} contato(s) através da instância 'Vendas Lynx'?\n\nRegra das 24 Horas: Clientes que não responderem 'PARAR' nas primeiras 24h recebem permissão automática (Opt-in).`
+        `Deseja iniciar o envio do catálogo para ${targetContactIds.length} contato(s) (${scopeDesc}) através da instância '${targetInst.name}'?\n\nRegra das 24 Horas: Clientes que não responderem 'PARAR' nas primeiras 24h recebem permissão automática (Opt-in).`
       )
     ) {
       return;
@@ -879,7 +913,7 @@ export default function EvolutionManager({
         body: JSON.stringify({
           action: "SEND_CATALOG_CAMPAIGN",
           payload: {
-            instance_name: "Vendas Lynx",
+            instance_name: targetInst.name,
             contact_ids: targetContactIds,
             message_template: campaignMessageTemplate,
             catalog_url: campaignCatalogUrl,
@@ -895,7 +929,7 @@ export default function EvolutionManager({
 
       notify(
         "success",
-        `Campanha disparada com sucesso! ${data.sentCount} mensagens enviadas. (${data.skippedOptOutCount} contatos bloqueados/PARAR foram protegidos e ignorados)`
+        `Campanha disparada via "${targetInst.name}"! ${data.sentCount} mensagens enviadas. (${data.skippedOptOutCount} contatos bloqueados/PARAR foram protegidos e ignorados)`
       );
       setShowCampaignModal(false);
       await onRefreshData();
@@ -908,15 +942,12 @@ export default function EvolutionManager({
 
   // Disparo de Campanha Promocional (Regra Estrita de 25h pós-convite)
   const handleLaunchPromotionCampaign = async () => {
-    // 1. Validação estrita da instância "Vendas Lynx"
-    const targetInst = instances.find(
-      (i) => i.name.trim().toLowerCase() === "vendas lynx"
-    );
+    const targetInst = activeSenderInstance;
 
     if (!targetInst) {
       notify(
         "error",
-        "Ação Bloqueada: A instância dedicada 'Vendas Lynx' ainda não está cadastrada. Cadastre-a para habilitar disparos."
+        "Ação Bloqueada: Nenhuma instância selecionada ou disponível para envio. Conecte ou cadastre uma instância."
       );
       return;
     }
@@ -939,14 +970,21 @@ export default function EvolutionManager({
     if (eligibleContacts.length === 0) {
       notify(
         "error",
-        "Nenhum contato elegível para promoção. A regra exige que o convite tenha sido enviado há pelo menos 25 horas e que o cliente não tenha respondido 'PARAR'."
+        `Nenhum contato elegível para promoção ${
+          selectedInstanceFilter !== "ALL" ? `na instância "${selectedInstanceFilter}"` : ""
+        }. A regra exige que o convite tenha sido enviado há pelo menos 25 horas e que o cliente não tenha respondido 'PARAR'.`
       );
       return;
     }
 
+    const scopeDesc =
+      selectedInstanceFilter !== "ALL"
+        ? `somente da instância "${selectedInstanceFilter}"`
+        : "filtrados";
+
     if (
       !confirm(
-        `Disparar promoção de "${promoProductTitle}" para ${eligibleContacts.length} contato(s) elegíveis?\n\n` +
+        `Disparar promoção de "${promoProductTitle}" para ${eligibleContacts.length} contato(s) elegíveis (${scopeDesc}) através da instância '${targetInst.name}'?\n\n` +
           `Regra das 25 Horas: Apenas contatos com convite enviado há no mínimo 25 horas e SEM resposta 'PARAR' receberão a mensagem.`
       )
     ) {
@@ -961,7 +999,7 @@ export default function EvolutionManager({
         body: JSON.stringify({
           action: "SEND_PROMOTION_CAMPAIGN",
           payload: {
-            instance_name: "Vendas Lynx",
+            instance_name: targetInst.name,
             contact_ids: eligibleContacts.map((c) => c.id),
             product_id: selectedPromoProductId || undefined,
             product_title: promoProductTitle,
@@ -980,7 +1018,7 @@ export default function EvolutionManager({
 
       notify(
         "success",
-        `Campanha de promoção disparada! ${data.sentCount} mensagens enviadas. (${data.rejectedCoolingOffCount} protegidos na carência <25h, ${data.rejectedOptOutCount} bloqueados por PARAR)`
+        `Oferta disparada via "${targetInst.name}" com sucesso! ${data.sentCount} mensagens enviadas. (${data.skippedCoolingOffCount || 0} em carência protegidos)`
       );
       setShowPromoModal(false);
       await onRefreshData();
@@ -1243,7 +1281,7 @@ export default function EvolutionManager({
             }`}
           >
             <Users className="w-4 h-4" />
-            Lista de Leads & Contatos ({contacts.length})
+            Lista de Leads & Contatos ({selectedInstanceFilter === "ALL" ? contacts.length : `${baseScopedContacts.length} de "${selectedInstanceFilter}"`})
           </button>
 
           <button
@@ -1412,7 +1450,7 @@ export default function EvolutionManager({
                   </option>
                   {availableDdds.map((ddd) => {
                     const info = BRAZIL_DDD_MAP[ddd];
-                    const countInDdd = contacts.filter((c) => c.ddd === ddd).length;
+                    const countInDdd = baseScopedContacts.filter((c) => c.ddd === ddd).length;
                     return (
                       <option key={ddd} value={ddd} className="bg-slate-900">
                         DDD {ddd} ({info?.state || "BR"}) — {countInDdd} contatos
@@ -1428,15 +1466,26 @@ export default function EvolutionManager({
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={selectedInstanceFilter}
-                  onChange={(e) => setSelectedInstanceFilter(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedInstanceFilter(val);
+                    setSelectedDdd("ALL");
+                    setCategory("ALL"); // Ao selecionar a instância, exibe todos os números pertencentes a ela de imediato!
+                    if (val !== "ALL") {
+                      setSenderInstanceName(val);
+                    }
+                  }}
+                  className="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none font-semibold cursor-pointer"
                 >
-                  <option value="ALL">Todas as Instâncias</option>
-                  {instances.map((i) => (
-                    <option key={i.id} value={i.name}>
-                      Instância: {i.name}
-                    </option>
-                  ))}
+                  <option value="ALL">Todas as Instâncias ({contacts.length} contatos globais)</option>
+                  {instances.map((i) => {
+                    const count = contacts.filter((c) => Array.isArray(c.instances) && c.instances.includes(i.name)).length;
+                    return (
+                      <option key={i.id} value={i.name}>
+                        Instância: {i.name} ({count} contatos {i.status === "open" ? "• Conectada" : ""})
+                      </option>
+                    );
+                  })}
                 </select>
 
                 <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800">
@@ -1489,7 +1538,7 @@ export default function EvolutionManager({
                       : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
                   }`}
                 >
-                  Todos ({contacts.length})
+                  Todos ({baseScopedContacts.length})
                 </button>
 
                 <button
@@ -1712,6 +1761,28 @@ export default function EvolutionManager({
             </div>
           </div>
 
+          {/* Banner de Instância Selecionada em Destaque */}
+          {selectedInstanceFilter !== "ALL" && (
+            <div className="bg-sky-950/40 border border-sky-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-200">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse shrink-0" />
+                <span>
+                  Filtro de Instância Ativo: Exibindo exclusivamente os <strong>{baseScopedContacts.length}</strong> contatos da instância <strong>&quot;{selectedInstanceFilter}&quot;</strong>.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedInstanceFilter("ALL");
+                  setCategory("ALL");
+                }}
+                className="text-xs text-sky-300 hover:text-white underline font-semibold cursor-pointer"
+              >
+                Limpar filtro (Ver todas as instâncias)
+              </button>
+            </div>
+          )}
+
           {/* Tabela de Leads */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -1737,7 +1808,7 @@ export default function EvolutionManager({
                 </p>
               </div>
               <span className="text-xs text-slate-400">
-                Mostrando {filteredContacts.length} de {contacts.length} leads
+                Mostrando {filteredContacts.length} de {baseScopedContacts.length} leads {selectedInstanceFilter !== "ALL" ? `da instância "${selectedInstanceFilter}"` : ""}
               </span>
             </div>
 
@@ -2156,6 +2227,9 @@ export default function EvolutionManager({
                         type="button"
                         onClick={() => {
                           setSelectedInstanceFilter(inst.name);
+                          setSelectedDdd("ALL");
+                          setCategory("ALL");
+                          setSenderInstanceName(inst.name);
                           setMainTab("CONTACTS");
                         }}
                         className="text-xs text-sky-400 hover:text-sky-300 font-medium"
@@ -2864,32 +2938,51 @@ export default function EvolutionManager({
               </button>
             </div>
 
-            {/* AVISO DA INSTÂNCIA EXCLUSIVA "Vendas Lynx" */}
-            {salesInstance ? (
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-bold text-emerald-300">
-                    Instância Autorizada Conectada: &quot;Vendas Lynx&quot;
-                  </div>
-                  <p className="text-[11px] text-emerald-200/90 mt-0.5">
-                    Os disparos serão realizados <strong>exclusivamente</strong> por esta instância dedicada. Todas as outras instâncias de suporte/pessoais permanecem estritamente preservadas.
-                  </p>
+            {/* INFORMAÇÃO DA AUDIÊNCIA E INSTÂNCIA REMETENTE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Box 1: Audiência de Envio */}
+              <div className="p-3.5 rounded-xl bg-purple-950/40 border border-purple-500/40 text-xs text-purple-200 space-y-1">
+                <div className="font-bold text-purple-300 flex items-center gap-1.5">
+                  <Target className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>Audiência: {selectedInstanceFilter !== "ALL" ? `Instância "${selectedInstanceFilter}"` : "Todas as Instâncias"}</span>
                 </div>
+                <p className="text-[11px] text-purple-200/80 leading-relaxed">
+                  {selectedInstanceFilter !== "ALL"
+                    ? `Disparo restrito EXCLUSIVAMENTE aos ${filteredContacts.length} números pertencentes à instância "${selectedInstanceFilter}".`
+                    : `Disparo configurado para todos os ${filteredContacts.length} contatos atualmente no filtro.`}
+                </p>
               </div>
-            ) : (
-              <div className="p-3.5 rounded-xl bg-amber-950/50 border border-amber-500/50 text-xs text-amber-200 flex items-start gap-2.5">
-                <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="font-bold text-amber-300 text-sm">
-                    Instância &quot;Vendas Lynx&quot; Não Encontrada
+
+              {/* Box 2: Instância Remetente */}
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-slate-300 flex items-center gap-1.5">
+                    <Smartphone className="w-4 h-4 text-sky-400 shrink-0" />
+                    <span>Instância Remetente (WhatsApp)</span>
                   </div>
-                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                    Por rigorosa política de segurança e anti-spam, <strong>nenhuma das outras instâncias pode enviar mensagens</strong>. Apenas a instância dedicada chamada <strong>&quot;Vendas Lynx&quot;</strong> tem permissão de disparo.
-                  </p>
+                  {activeSenderInstance && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      activeSenderInstance.status === "open"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                    }`}>
+                      {activeSenderInstance.status === "open" ? "● Conectada" : "○ Desconectada"}
+                    </span>
+                  )}
                 </div>
+                <select
+                  value={activeSenderInstance?.name || ""}
+                  onChange={(e) => setSenderInstanceName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer font-medium"
+                >
+                  {instances.map((i) => (
+                    <option key={i.id} value={i.name}>
+                      {i.name} {i.status === "open" ? "(Conectada - Online)" : `(${i.status || "Offline"})`}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
+            </div>
 
             {/* GRID PRINCIPAL: FORMULÁRIO À ESQUERDA + CELULAR WHATSAPP À DIREITA */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -3079,7 +3172,7 @@ export default function EvolutionManager({
                 <WhatsAppPhonePreview
                   message={campaignMessageTemplate}
                   imageUrl={campaignImageUrl}
-                  senderName="Vendas Lynx"
+                  senderName={activeSenderInstance?.name || "Lynx Loja"}
                   selectedContact={filteredContacts[0] || null}
                   contactsList={filteredContacts}
                   catalogUrl={campaignCatalogUrl}
@@ -3101,7 +3194,7 @@ export default function EvolutionManager({
                 type="button"
                 onClick={handleLaunchCampaign}
                 disabled={
-                  !salesInstance ||
+                  !activeSenderInstance ||
                   campaignSending ||
                   filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length === 0
                 }
@@ -3110,8 +3203,8 @@ export default function EvolutionManager({
                 <Send className={`w-4 h-4 ${campaignSending ? "animate-pulse" : ""}`} />
                 {campaignSending
                   ? "Disparando Mensagens..."
-                  : !salesInstance
-                  ? "Requer Instância 'Vendas Lynx'"
+                  : !activeSenderInstance
+                  ? "Selecione uma Instância"
                   : `Disparar para ${
                       filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length
                     } Contato(s)`}
@@ -3156,32 +3249,51 @@ export default function EvolutionManager({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* COLUNA ESQUERDA: CONFIGURAÇÕES E FORMULÁRIO */}
               <div className="lg:col-span-7 space-y-4">
-                {/* AVISO DE INSTÂNCIA VENDAS LYNX */}
-                {!salesInstance ? (
-                  <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-3.5 text-xs text-rose-200 flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <div className="font-bold text-rose-300">
-                        Instância &quot;Vendas Lynx&quot; Não Encontrada
+                {/* INFORMAÇÃO DA AUDIÊNCIA E INSTÂNCIA REMETENTE */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Box 1: Audiência de Envio */}
+                  <div className="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-xs text-amber-200 space-y-1">
+                    <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Audiência: {selectedInstanceFilter !== "ALL" ? `Instância "${selectedInstanceFilter}"` : "Todas as Instâncias"}</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                      {selectedInstanceFilter !== "ALL"
+                        ? `Disparo de promoção restrito EXCLUSIVAMENTE aos contatos da instância "${selectedInstanceFilter}".`
+                        : `Disparo de promoção configurado para contatos elegíveis (+25h) de todas as instâncias.`}
+                    </p>
+                  </div>
+
+                  {/* Box 2: Instância Remetente */}
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold text-slate-300 flex items-center gap-1.5">
+                        <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Instância Remetente (WhatsApp)</span>
                       </div>
-                      <p className="text-[11px] text-rose-300/80 leading-relaxed">
-                        Por segurança de blindagem contra bloqueios, disparos de mensagens comerciais e promoções são restritos à instância dedicada <strong>&quot;Vendas Lynx&quot;</strong>.
-                      </p>
+                      {activeSenderInstance && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          activeSenderInstance.status === "open"
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                        }`}>
+                          {activeSenderInstance.status === "open" ? "● Conectada" : "○ Desconectada"}
+                        </span>
+                      )}
                     </div>
+                    <select
+                      value={activeSenderInstance?.name || ""}
+                      onChange={(e) => setSenderInstanceName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+                    >
+                      {instances.map((i) => (
+                        <option key={i.id} value={i.name}>
+                          {i.name} {i.status === "open" ? "(Conectada - Online)" : `(${i.status || "Offline"})`}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                ) : (
-                  <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>
-                        Instância de Envio: <strong>&quot;{salesInstance.name}&quot;</strong> ({salesInstance.status === "open" ? "Conectada" : "Desconectada"})
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                      Canal Autorizado
-                    </span>
-                  </div>
-                )}
+                </div>
 
                 {/* REGRA DAS 25 HORAS - DESTAQUE */}
                 <div className="bg-amber-950/25 border border-amber-500/30 rounded-xl p-3.5 text-xs space-y-1.5">
@@ -3421,7 +3533,7 @@ export default function EvolutionManager({
                 <WhatsAppPhonePreview
                   message={promoMessageTemplate}
                   imageUrl={promoImageUrl}
-                  senderName="Vendas Lynx"
+                  senderName={activeSenderInstance?.name || "Lynx Loja"}
                   selectedContact={
                     filteredContacts.find((c) => checkPromotionEligibility(c).allowed) ||
                     filteredContacts[0] ||
@@ -3449,7 +3561,7 @@ export default function EvolutionManager({
                 type="button"
                 onClick={handleLaunchPromotionCampaign}
                 disabled={
-                  !salesInstance ||
+                  !activeSenderInstance ||
                   promoSending ||
                   !promoProductTitle.trim() ||
                   !promoBuyLink.trim() ||
@@ -3460,8 +3572,8 @@ export default function EvolutionManager({
                 <Sparkles className={`w-4 h-4 ${promoSending ? "animate-spin" : ""}`} />
                 {promoSending
                   ? "Disparando Ofertas..."
-                  : !salesInstance
-                  ? "Requer Instância 'Vendas Lynx'"
+                  : !activeSenderInstance
+                  ? "Selecione uma Instância"
                   : filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length === 0
                   ? "Nenhum Contato Apto (+25h)"
                   : `Disparar Oferta para ${
@@ -3873,7 +3985,7 @@ export default function EvolutionManager({
                       ? campaignImageUrl
                       : simulatorImageUrl
                   }
-                  senderName="Vendas Lynx"
+                  senderName={activeSenderInstance?.name || "Lynx Loja"}
                   selectedContact={simulatorContact || filteredContacts[0] || null}
                   contactsList={filteredContacts}
                   productTitle={simulatorProduct?.title || promoProductTitle || "Produto Selecionado"}

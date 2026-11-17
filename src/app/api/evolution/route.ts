@@ -206,15 +206,17 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Valida rigorosamente se a instância é estritamente "Vendas Lynx"
+      // Valida se a instância indicada existe entre as instâncias cadastradas ou se é "Vendas Lynx"
       const targetInstName = (payload?.instance_name || "").toString().trim().toLowerCase();
-      if (targetInstName !== "vendas lynx") {
+      const validInstance = state.evolution_instances.find(
+        (i) => i.name.trim().toLowerCase() === targetInstName
+      );
+      if (!validInstance && targetInstName !== "vendas lynx") {
         return NextResponse.json(
           {
-            error:
-              "Ação bloqueada por política de segurança: APENAS a instância dedicada 'Vendas Lynx' possui autorização de envio. As demais instâncias cadastradas são estritamente somente-leitura.",
+            error: `Ação bloqueada: A instância "${payload?.instance_name}" não foi encontrada no sistema. Selecione ou cadastre uma instância válida para realizar o disparo.`,
           },
-          { status: 403 }
+          { status: 400 }
         );
       }
     }
@@ -1120,18 +1122,10 @@ export async function POST(req: NextRequest) {
         };
 
         const cleanInstName = (instance_name || "").trim();
-        if (cleanInstName.toLowerCase() !== "vendas lynx") {
-          return NextResponse.json(
-            {
-              error:
-                "Ação bloqueada: Somente a instância 'Vendas Lynx' tem autorização para disparos de catálogo.",
-            },
-            { status: 403 }
-          );
-        }
-
-        // Localiza a instância "Vendas Lynx" no banco de dados
+        // Localiza a instância solicitada ou faz fallback inteligente para "Vendas Lynx"
         const salesInstance = state.evolution_instances.find(
+          (i) => i.name.trim().toLowerCase() === cleanInstName.toLowerCase()
+        ) || state.evolution_instances.find(
           (i) => i.name.trim().toLowerCase() === "vendas lynx"
         );
 
@@ -1139,7 +1133,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "A instância 'Vendas Lynx' ainda não foi cadastrada no sistema. Acesse a aba 'Instâncias Cadastradas' e cadastre a instância 'Vendas Lynx' para habilitar esta campanha.",
+                `A instância "${cleanInstName}" não foi cadastrada no sistema. Cadastre-a ou selecione uma instância válida na aba 'Instâncias Cadastradas' para habilitar esta campanha.`,
             },
             { status: 400 }
           );
@@ -1295,18 +1289,10 @@ export async function POST(req: NextRequest) {
         };
 
         const cleanInstName = (instance_name || "").trim();
-        if (cleanInstName.toLowerCase() !== "vendas lynx") {
-          return NextResponse.json(
-            {
-              error:
-                "Ação bloqueada: Somente a instância dedicada 'Vendas Lynx' possui autorização para disparos promocionais.",
-            },
-            { status: 403 }
-          );
-        }
-
-        // Localiza a instância "Vendas Lynx" no banco de dados
+        // Localiza a instância solicitada ou faz fallback inteligente para "Vendas Lynx"
         const salesInstance = state.evolution_instances.find(
+          (i) => i.name.trim().toLowerCase() === cleanInstName.toLowerCase()
+        ) || state.evolution_instances.find(
           (i) => i.name.trim().toLowerCase() === "vendas lynx"
         );
 
@@ -1314,7 +1300,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "A instância 'Vendas Lynx' ainda não está cadastrada no sistema. Cadastre-a para realizar disparos promocionais.",
+                `A instância "${cleanInstName}" ainda não está cadastrada no sistema. Cadastre-a ou selecione uma instância válida para realizar disparos promocionais.`,
             },
             { status: 400 }
           );

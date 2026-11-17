@@ -326,14 +326,18 @@ export async function POST(req: NextRequest) {
     state.settings.last_asaas_sync = new Date().toISOString();
 
     writeLocalDb(state);
-    await syncStateToSupabaseIfConfigured(state);
+    // Sincroniza pagamentos, grupos e regras com o Supabase sem reprocessar contatos da Evolution (evita lentidão e payload gigante)
+    await syncStateToSupabaseIfConfigured(state, { skipContacts: true });
+
+    // Remove evolution_contacts da resposta HTTP (reduz payload de 15MB para 20KB, evitando estouro de buffer/timeout no LiteSpeed)
+    const { evolution_contacts: _, ...safeState } = state;
 
     return NextResponse.json({
       ok: true,
       importedCount,
       customersCount: customerList.length,
       groupsCount: state.groups.length,
-      state,
+      state: safeState,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
