@@ -1164,7 +1164,7 @@ export default function EvolutionManager({
         </div>
       </div>
 
-      {/* Garantia de Segurança: Modo 100% Leitura (Anti-Spam / Sem Envio de Mensagens) */}
+      {/* Garantia de Segurança: Controle Manual de Disparos & Escopo por Instância */}
       <div className="bg-sky-950/40 border border-sky-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center shrink-0">
@@ -1172,18 +1172,18 @@ export default function EvolutionManager({
           </div>
           <div>
             <div className="font-bold text-sky-100 flex items-center gap-2">
-              <span>Modo Estritamente Leitura & Consolidação de Leads</span>
+              <span>Controle Manual de Envios &amp; Escopo por Instância</span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-medium">
-                🔒 NUNCA Envia Mensagens
+                🔒 Envio Manual Supervisionado
               </span>
             </div>
             <p className="text-slate-300 text-[11px] mt-0.5">
-              As instâncias da Evolution API cadastradas servem <strong>exclusivamente para ler e consolidar contatos</strong>, extrair nomes/bios de grupos e separar por DDD. O app não possui rotas de envio de mensagens nem dispara qualquer comunicação.
+              Nenhum disparo automático é realizado sem confirmação. As mensagens só são enviadas quando disparadas manualmente pelo SuperAdmin através da <strong>Instância de Envio selecionada</strong> e apenas para os <strong>contatos do filtro ativo</strong> (respeitando bloqueios &quot;PARAR&quot; e regra das 25h).
             </p>
           </div>
         </div>
         <div className="shrink-0 text-[11px] text-slate-400 font-mono bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-          Status: <span className="text-emerald-400 font-semibold">Leitura Segura Ativa</span>
+          Remetente: <span className="text-emerald-400 font-semibold">{activeSenderInstance?.name || "Nenhum"}</span>
         </div>
       </div>
 
@@ -1300,6 +1300,23 @@ export default function EvolutionManager({
 
         {mainTab === "CONTACTS" && (
           <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 border border-purple-500/40 text-xs">
+              <Send className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span className="text-slate-300 font-semibold whitespace-nowrap">Instância de Envio:</span>
+              <select
+                value={activeSenderInstance?.name || ""}
+                onChange={(e) => setSenderInstanceName(e.target.value)}
+                className="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs font-bold text-emerald-300 focus:outline-none focus:border-purple-400 cursor-pointer"
+                title="Selecione qual instância vai enviar as mensagens de vendas e promoções"
+              >
+                {instances.map((i) => (
+                  <option key={i.id} value={i.name} className="bg-slate-900 text-white">
+                    {i.name} {i.status === "open" ? "● Conectada" : `(${i.status || "Offline"})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               type="button"
               onClick={() => setShowCampaignModal(true)}
@@ -2958,7 +2975,7 @@ export default function EvolutionManager({
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-slate-300 flex items-center gap-1.5">
                     <Smartphone className="w-4 h-4 text-sky-400 shrink-0" />
-                    <span>Instância Remetente (WhatsApp)</span>
+                    <span>Selecionar Instância de Vendas (Quem Envia):</span>
                   </div>
                   {activeSenderInstance && (
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -3205,7 +3222,7 @@ export default function EvolutionManager({
                   ? "Disparando Mensagens..."
                   : !activeSenderInstance
                   ? "Selecione uma Instância"
-                  : `Disparar para ${
+                  : `Disparar via "${activeSenderInstance.name}" para ${
                       filteredContacts.filter((c) => getEffectiveConsent(c) !== "OPTED_OUT").length
                     } Contato(s)`}
               </button>
@@ -3232,7 +3249,7 @@ export default function EvolutionManager({
                     </span>
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Envio exclusivo com a instância &quot;Vendas Lynx&quot; respeitando carência de 25h pós-convite.
+                    Escolha qual instância vai enviar as mensagens e dispare respeitando a carência de 25h pós-convite.
                   </p>
                 </div>
               </div>
@@ -3269,7 +3286,7 @@ export default function EvolutionManager({
                     <div className="flex items-center justify-between">
                       <div className="font-bold text-slate-300 flex items-center gap-1.5">
                         <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span>Instância Remetente (WhatsApp)</span>
+                        <span>Selecionar Instância de Vendas (Quem Envia):</span>
                       </div>
                       {activeSenderInstance && (
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -3576,7 +3593,7 @@ export default function EvolutionManager({
                   ? "Selecione uma Instância"
                   : filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length === 0
                   ? "Nenhum Contato Apto (+25h)"
-                  : `Disparar Oferta para ${
+                  : `Disparar via "${activeSenderInstance.name}" para ${
                       filteredContacts.filter((c) => checkPromotionEligibility(c).allowed).length
                     } Contato(s) Elegíveis (+25h)`}
               </button>
@@ -3665,6 +3682,36 @@ export default function EvolutionManager({
                       Mensagem Livre
                     </button>
                   </div>
+                </div>
+
+                {/* SELEÇÃO DA INSTÂNCIA DE VENDAS / ENVIO (REMETENTE) */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-semibold flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-purple-400" />
+                      Instância de Vendas / Envio (Remetente):
+                    </label>
+                    {activeSenderInstance && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        activeSenderInstance.status === "open"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                      }`}>
+                        {activeSenderInstance.status === "open" ? "● Conectada" : "○ Desconectada"}
+                      </span>
+                    )}
+                  </div>
+                  <select
+                    value={activeSenderInstance?.name || ""}
+                    onChange={(e) => setSenderInstanceName(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:border-purple-500 focus:outline-none cursor-pointer font-medium"
+                  >
+                    {instances.map((i) => (
+                      <option key={i.id} value={i.name}>
+                        {i.name} {i.status === "open" ? "(Conectada - Online)" : `(${i.status || "Offline"})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* SELEÇÃO DO CONTATO PARA INTERPOLAÇÃO DE NOME */}
